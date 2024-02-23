@@ -1,4 +1,5 @@
 const server_config = require('../config.json');
+const db_handle = require('./db_handle.js')
 
 const bodyParser = require("body-parser");
 const axios = require("axios");
@@ -8,6 +9,7 @@ const express = require("express");
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
 
 async function get_access_token() {
     let data = qs.stringify({
@@ -19,10 +21,10 @@ async function get_access_token() {
     let token_config = {
         method: 'post',
         maxBodyLength: Infinity,
-        url: 'https://tstdrv1278203.suitetalk.api.netsuite.com/services/rest/auth/oauth2/v1/token',
+        url: server_config.oauth2_url,
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Basic MjFhMTU5OWY2ZjA1MTlkNTBmYWJiODNkNGJmODMzMjMyMGQyODM0ZmY5MzAyMWE1NTYwYmE1Mzc5NjE3ZDRjMDowMTdmNjk5ZGJhNDViZTQxYjNkZjc3ZDdlZDU0M2FlOTJiMjc5YTdkZDg1YjE1YjYwYTgyM2JkMjEwZDk5Mzll'
+            'Authorization': 'Basic ' + server_config.basic_authorization
         },
         data: data
     };
@@ -32,7 +34,6 @@ async function get_access_token() {
 
 async function get_request() {
     var bearer_token = await get_access_token();
-    console.log("bearer_token is " + bearer_token)
     var get_config = {
         headers: {
             Authorization:
@@ -42,7 +43,8 @@ async function get_request() {
     }
 
     var response = await axios.get(server_config.restlet_get_url, get_config);
-    console.log(JSON.stringify(response.data));
-}
+    if (response.data.length > 0) {     //넣을거 있으면 insert 실행
 
+    }
+}
 get_request();
