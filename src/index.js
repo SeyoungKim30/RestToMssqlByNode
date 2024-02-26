@@ -42,9 +42,11 @@ async function get_request() {
         "Content-Type": "application/x-www-form-urlencoded",
     }
 
-    var response = await axios.get(server_config.restlet_get_url, get_config);
+    var response = await axios.get(server_config.restlet_get_url, get_config);  //response.data는 objects의 array
     if (response.data.length > 0) {     //넣을거 있으면 insert 실행
-
+        console.log(`typeof(response.data): `+typeof(response.data)+" : "+response.data)
+        db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data);
     }
 }
+
 get_request();
