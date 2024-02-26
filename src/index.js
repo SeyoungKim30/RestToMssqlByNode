@@ -32,21 +32,41 @@ async function get_access_token() {
     return response.data.access_token;
 }
 
-async function get_request() {
+async function insert_request(tabletypename) {
     var bearer_token = await get_access_token();
     var get_config = {
-        headers: {
-            Authorization:
-                "Bearer " + bearer_token,
-        },
+        headers: { Authorization: "Bearer " + bearer_token },
         "Content-Type": "application/x-www-form-urlencoded",
     }
+    var response = await axios.get(server_config.restlet_get_url + "&tabletype=" + tabletypename, get_config);  //response.data는 objects의 array
 
-    var response = await axios.get(server_config.restlet_get_url, get_config);  //response.data는 objects의 array
     if (response.data.length > 0) {     //넣을거 있으면 insert 실행
-        console.log(`typeof(response.data): `+typeof(response.data)+" : "+response.data)
-        db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data);
+        if (tabletypename == "HCMS_E2C_EVLM_TRNS_PTCL") {
+            var result = await db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data);
+        }
+        
+        //put으로 result 보내기
+        let put_config = {
+            method: 'put',
+            maxBodyLength: Infinity,
+            url: 'https://tstdrv1278203.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=2522&deploy=1',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer '+bearer_token
+            },
+            data: JSON.stringify(result.recordset)
+        };
+
+        axios.request(put_config)
+            .then((response) => {
+                console.log(JSON.stringify(response.data));
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+
+
     }
 }
 
-get_request();
+insert_request("HCMS_E2C_EVLM_TRNS_PTCL");

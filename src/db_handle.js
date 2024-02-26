@@ -20,44 +20,48 @@ const poolConfig = {
 
 const pool = new sql.ConnectionPool(poolConfig);
 
-/*
-async function executeQuery() {
+
+async function executeQuery(querystring) {
     try {
         await pool.connect();
-        const result = await pool.query('select * from HCMS_E2C_DMST_REMT_PTCL');
-        console.log(result.recordset);
+        var result = await pool.query(querystring);
+        console.log(result);
     } catch (err) {
         console.error('Error occurred:', err);
     } finally {
         pool.close();
     }
+    return result;
 }
-*/
 
-function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
-var valuesString=``;
-      dataObj.forEach(each => {
-          let values = `(
-              ${each.values.custrecord_swk_cms_cust_no},
-              ${each.values.custrecord_swk_cms_amt},
-              ${each.values.internalid[0].value},
-              ${each.values.custrecord_swk_cms_rcv_holder},
-              ${each.values.custrecord_swk_cms_rcv_acct},
-              ${each.values.custrecord_swk_cms_bank_cd},
-              ${each.values.custrecord_swk_cms_wdrw_acct},
-              ${each.values.custrecord_swk_cms_cd},
-              ${each.values.custrecord_swk_cms_transfer_file},
-              ${each.values.custrecord_swk_cms_transfer_file_seq},
-              ${each.values.custrecord_swk_cms_rcv_memo},
-              ${each.values.custrecord_swk_cms_wdrw_memo},
+
+async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
+    var valuesString = ``;
+    dataObj.forEach(each => {
+        let values = `(
+            '${each.values.custrecord_swk_cms_cust_no}',
+            ${each.values.custrecord_swk_cms_amt},
+            '${each.values.internalid[0].value}',
+            '${each.values.custrecord_swk_cms_rcv_holder}',
+            '${each.values.custrecord_swk_cms_rcv_acct}',
+            '${each.values.custrecord_swk_cms_bank_cd}',
+            '${each.values.custrecord_swk_cms_wdrw_acct}',
+            '${each.values.custrecord_swk_cms_cd}',
+            '${each.values.custrecord_swk_cms_transfer_file}',
+            ${each.values.custrecord_swk_cms_transfer_file_seq},
+            '${each.values.custrecord_swk_cms_rcv_memo}',
+            '${each.values.custrecord_swk_cms_wdrw_memo}',
               CONVERT(CHAR(8), GETDATE(), 112),
-              FORMAT(GETDATE(), 'HHmmss')
+              FORMAT(GETDATE(), 'HHmmss'),
+              '${each.values.custrecord_swk_cms_sms_if_flag}',
+              '${each.values.custrecord_swk_cms_type}',
+              'I'
               )`
-          if(valuesString!=``){valuesString += `, `}
-          valuesString += values;
-      });
-  
-      let insertQ = `INSERT INTO [dbo].[HCMS_E2C_EVLM_TRNS_PTCL]		
+        if (valuesString != ``) { valuesString += `, ` }
+        valuesString += values;
+    });
+
+    let insertQ = `INSERT INTO [dbo].[HCMS_E2C_EVLM_TRNS_PTCL]		
       (		
       [CUST_NO],
       [TRSC_AMT],
@@ -67,25 +71,27 @@ var valuesString=``;
       [RCV_INST_DV_NO],
       [CRYP_WDRW_ACCT_NO],
       [CMSV_CD],
-      [CMSV_RMTE_NM],
-      [CMSV_TRMS_ST_CD],
-      [TRNS_DATE],
-      [TRMS_ST_CTT],
-      [TRNS_TIME],
-      [COMM],
-      [ERR_CD],
-      [ERR_MSG],
-      [EVLM_TRNS_SAL_TRNS_DV_CD],
-      [CRYP_SMS_TRMS_MBPH_NO],
-      [SMS_TRMS_YN],
       [APNX_FILE_NM],
       [REMT_SEQ_NO],
       [RCV_PSBK_MARK_CTT],
       [WDRW_PSBK_MARK_CTT],
       [REG_DT],
-      [REG_TM]) values `+ valuesString
-      console.log(insertQ)
-
+      [REG_TM],
+      [SMS_TRMS_YN],
+      [EVLM_TRNS_SAL_TRNS_DV_CD],
+      [CMSV_TRMS_ST_CD]
+      ) 
+      OUTPUT inserted.ERP_LNK_CTT, inserted.REG_DT, inserted.REG_TM, inserted.CMSV_TRMS_ST_CD
+      VALUES `+ valuesString;
+    let result = executeQuery(insertQ);
+    console.log('result : '+result)
+    return result;
+    
 }
+
+async function select_HCMS_E2C_EVLM_TRNS_PTCL(filename){
+    let query = `select [REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] from [HCMS_E2C_EVLM_TRNS_PTCL] where APNX_FILE_NM=''`
+}
+
 
 module.exports = { insert_HCMS_E2C_EVLM_TRNS_PTCL };
