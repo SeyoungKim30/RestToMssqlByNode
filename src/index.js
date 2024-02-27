@@ -32,48 +32,92 @@ async function get_access_token() {
     return response.data.access_token;
 }
 
-async function insert_request(tabletypename) {
-    var bearer_token = await get_access_token();
+async function axios_get(table_type, query_type,bearer_token) {
     var get_config = {
         headers: { Authorization: "Bearer " + bearer_token },
         "Content-Type": "application/x-www-form-urlencoded",
     }
-    var response = await axios.get(server_config.restlet_get_url + "&tabletype=" + tabletypename, get_config);  //response.data는 objects의 array
+    var response = await axios.get(server_config.restlet_get_url + "&tabletype=" + table_type + "&type=" + query_type, get_config);  //response.data는 objects의 array
+    return response;
+}
 
+async function insert_request(table_type) {
+    var bearer_token = await get_access_token();
+    var response = await axios_get(table_type, "insert",bearer_token);
+    console.log("GET response : " + response)
     if (response.data.length > 0) {     //넣을거 있으면 insert 실행
-        if (tabletypename == "HCMS_E2C_EVLM_TRNS_PTCL") {
-            var insert_result = await db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data);
-        }
-        if(insert_result.type == "success"){
-            var data = JSON.stringify(insert_result.result.recordset);
-        }else{
-            var data = insert_result.result;
-            data[recordset]=response.data
-
-        }
-        //put으로 result 보내기
-        let put_config = {
-            method: 'put',
-            maxBodyLength: Infinity,
-            url: 'https://tstdrv1278203.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=2522&deploy=1',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + bearer_token
-            },
-            data: data
-        };
-
-        axios.request(put_config)
-            .then((response) => {
+        /* 
+         if (table_type == "HCMS_E2C_EVLM_TRNS_PTCL") {
+              var insert_result = await db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data);
+          }
+          if(insert_result.type == "success"){
+              var data = JSON.stringify(insert_result.result.recordset);
+          }else{
+              var data = insert_result.result;
+              data[recordset]=response.data
+          }
+          //put으로 result 보내기
+          let put_config = {
+              method: 'put',
+              maxBodyLength: Infinity,
+              url: 'https://tstdrv1278203.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=2522&deploy=1',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + bearer_token
+              },
+              data: data
+          };
+  
+          axios.request(put_config)
+              .then((response) => {
+                  console.log(JSON.stringify(response.data));
+              })
+              .catch((error) => {
+                  console.log(error);
+              });
+  */
+        if (table_type == "HCMS_E2C_EVLM_TRNS_PTCL") {
+            db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data).then((insert_result) => {
+                var data = {};
+                if (insert_result.type == "success") {
+                    data["recordset"] = insert_result.result.recordset;
+                    data["type"] = "success"
+                } else {
+                    data = insert_result;
+                    data["recordset"] = response.data;
+                }
+                //put으로 result 보내기
+                let put_config = {
+                    method: 'put',
+                    maxBodyLength: Infinity,
+                    url: 'https://tstdrv1278203.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=2522&deploy=1',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + bearer_token
+                    },
+                    data: JSON.stringify(data)
+                };
+                return axios.request(put_config)
+            }).then((response) => {
                 console.log(JSON.stringify(response.data));
-            })
-            .catch((error) => {
+            }).catch((error) => {
                 console.log(error);
             });
-
-
+        }
 
     }
 }
 
-insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
+async function update_request(table_type) {
+    var bearer_token = await get_access_token();
+    var response = await axios_get(table_type, "update",bearer_token);
+    if (response.data.length > 0) {
+        if (table_type == "HCMS_E2C_EVLM_TRNS_PTCL") {
+            db_handle.select_HCMS_E2C_EVLM_TRNS_PTCL(response.data)
+        }
+    }
+}
+
+
+//insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
+update_request("HCMS_E2C_EVLM_TRNS_PTCL");
