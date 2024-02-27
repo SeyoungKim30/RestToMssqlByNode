@@ -42,9 +42,15 @@ async function insert_request(tabletypename) {
 
     if (response.data.length > 0) {     //넣을거 있으면 insert 실행
         if (tabletypename == "HCMS_E2C_EVLM_TRNS_PTCL") {
-            var result = await db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data);
+            var insert_result = await db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data);
         }
-        
+        if(insert_result.type == "success"){
+            var data = JSON.stringify(insert_result.result.recordset);
+        }else{
+            var data = insert_result.result;
+            data[recordset]=response.data
+
+        }
         //put으로 result 보내기
         let put_config = {
             method: 'put',
@@ -52,9 +58,9 @@ async function insert_request(tabletypename) {
             url: 'https://tstdrv1278203.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=2522&deploy=1',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer '+bearer_token
+                'Authorization': 'Bearer ' + bearer_token
             },
-            data: JSON.stringify(result.recordset)
+            data: data
         };
 
         axios.request(put_config)
@@ -64,6 +70,7 @@ async function insert_request(tabletypename) {
             .catch((error) => {
                 console.log(error);
             });
+
 
 
     }

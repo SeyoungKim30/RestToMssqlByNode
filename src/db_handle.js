@@ -24,10 +24,11 @@ const pool = new sql.ConnectionPool(poolConfig);
 async function executeQuery(querystring) {
     try {
         await pool.connect();
-        var result = await pool.query(querystring);
+        var result = {"type":"success", "result":await pool.query(querystring)};
         console.log(result);
     } catch (err) {
         console.error('Error occurred:', err);
+        var result = {"type":"error", "error":err.name};
     } finally {
         pool.close();
     }
@@ -84,9 +85,8 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
       OUTPUT inserted.ERP_LNK_CTT, inserted.REG_DT, inserted.REG_TM, inserted.CMSV_TRMS_ST_CD
       VALUES `+ valuesString;
     let result = executeQuery(insertQ);
-    console.log('result : '+result)
+
     return result;
-    
 }
 
 async function select_HCMS_E2C_EVLM_TRNS_PTCL(filename){
