@@ -89,23 +89,19 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
 }
 
 async function select_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
-    var result = {};
+    var result = []
     await Promise.all(
         dataObj.map(async (element) => {
             await pool.connect();
             let filename = element["values"]["GROUP(custrecord_swk_cms_transfer_file)"];
             let query = `select [ERP_LNK_CTT],[REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] from [HCMS_E2C_EVLM_TRNS_PTCL] where APNX_FILE_NM= '${filename}'; `
             await executeQuery(query).then(resultObj => {
-                result[filename] = resultObj["result"]["recordset"]
+                result.push(...resultObj["result"]["recordset"]);
             })
         })
-    ).then(() => {
-        console.log(result);
-        return result;
-    })
-
+    )
+    return result;
 }
-
 
 module.exports = {
     insert_HCMS_E2C_EVLM_TRNS_PTCL,

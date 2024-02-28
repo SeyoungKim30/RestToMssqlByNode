@@ -110,10 +110,24 @@ async function insert_request(table_type) {
 
 async function update_request(table_type) {
     var bearer_token = await get_access_token();
-    var response = await axios_get(table_type, "update",bearer_token);
+    var response = await axios_get(table_type, "update",bearer_token);      //업데이트 필요한 레코드의 file name
     if (response.data.length > 0) {
         if (table_type == "HCMS_E2C_EVLM_TRNS_PTCL") {
-            db_handle.select_HCMS_E2C_EVLM_TRNS_PTCL(response.data)
+            db_handle.select_HCMS_E2C_EVLM_TRNS_PTCL(response.data).then((result)=>{
+                //post로 반환해서 update
+                const post_config = {
+                    method: 'post',
+                    maxBodyLength: Infinity,
+                    url: 'https://tstdrv1278203.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=2522&deploy=1',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + bearer_token
+                    },
+                    data: JSON.stringify(result)
+                };
+                return axios.request(post_config);
+            })
+
         }
     }
 }
