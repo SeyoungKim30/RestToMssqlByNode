@@ -93,26 +93,38 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
     }
 }
 
-async function select_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
+async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
     try {
-        var result = []
-        await Promise.all(
-            dataObj.map(async (element) => {
-                await pool.connect();
-                let filename = element["values"]["GROUP(custrecord_swk_cms_transfer_file)"];
-                let query = `select [ERP_LNK_CTT],[REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] from [HCMS_E2C_EVLM_TRNS_PTCL] where APNX_FILE_NM= '${filename}' AND TRMS_ST_CTT is not null; `
-                await executeQuery(query).then(resultObj => {
-                    result.push(...resultObj["result"]["recordset"]);
-                })
-            })
-        )
+        var filenamecondition = ``;
+        if (dataObj.length == 1) {
+            let each = dataObj[0];
+            filenamecondition = `APNX_FILE_NM = '${each["values"]["GROUP(custrecord_swk_cms_transfer_file) "]} '`
+        } else {
+            for (let i = 0; i < dataObj.length; i++) {
+                if (i == 0) { filenamecondition += `(`; }
+                let each = dataObj[i];
+                let filename = each["values"]["GROUP(custrecord_swk_cms_transfer_file)"];
+                filenamecondition += `APNX_FILE_NM = '${filename}' `;
+                if (i + 1 < dataObj.length) { filenamecondition += `OR `; }
+                if (i + 1 == dataObj.length) { filenamecondition += `)`; }
+            }
+        }
+
+        await pool.connect();
+        let query = `select [ERP_LNK_CTT],[REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] from [HCMS_E2C_EVLM_TRNS_PTCL] where ${filenamecondition} AND TRMS_ST_CTT is not null; `
+        var result = await executeQuery(query)
         return result;
     } catch (e) {
         logger.error("HCMS_E2C_EVLM_TRNS_PTCL DB : select_ :: " + e)
     }
 }
 
+async function select_HCMS_ACCT_TRSC_PTCL() {
+    const query = `select * from HCMS_ACCT_TRSC_PTCL where NS_INTFC IS NULL;`
+    executeQuery(query)
+}
+
 module.exports = {
     insert_HCMS_E2C_EVLM_TRNS_PTCL,
-    select_HCMS_E2C_EVLM_TRNS_PTCL
+    select_HCMS_E2C_EVLM_TRNS_PTCL_to_update
 };
