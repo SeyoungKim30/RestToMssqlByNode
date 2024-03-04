@@ -1,3 +1,4 @@
+require('dotenv').config();
 const server_config = require('../config.json');
 const db_handle = require('./db_handle.js')
 const logger = require("./logger.js");
@@ -15,7 +16,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 async function get_access_token() {
     try {
         let data = qs.stringify({
-            'refresh_token': server_config.refresh_token,
+            'refresh_token': process.env.refresh_token,
             'redirect_uri': server_config.redirect_uri,
             'grant_type': 'refresh_token'
         });
@@ -26,7 +27,7 @@ async function get_access_token() {
             url: server_config.oauth2_url,
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': 'Basic ' + server_config.basic_authorization
+                'Authorization': 'Basic ' + process.env.basic_authorization
             },
             data: data
         };
@@ -47,7 +48,7 @@ async function axios_get(table_type, query_type, bearer_token) {
             headers: { Authorization: "Bearer " + bearer_token },
             "Content-Type": "application/x-www-form-urlencoded",
         }
-        var response = await axios.get(server_config.restlet_get_url + "&tabletype=" + table_type + "&type=" + query_type, get_config);  //response.data는 objects의 array
+        var response = await axios.get(server_config.restlet_url + "&tabletype=" + table_type + "&type=" + query_type, get_config);  //response.data는 objects의 array
         return response;
     } catch (e) {
         logger.error(`${table_type} fn axios_get :: ` + e)
@@ -75,7 +76,7 @@ async function insert_request(table_type) {
                 let put_config = {
                     method: 'put',
                     maxBodyLength: Infinity,
-                    url: 'https://tstdrv1278203.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=2522&deploy=1',
+                    url: server_config.restlet_url,
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + bearer_token
@@ -104,7 +105,7 @@ async function update_request(table_type) {
                  const post_config = {
                      method: 'post',
                      maxBodyLength: Infinity,
-                     url: 'https://tstdrv1278203.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=2522&deploy=1',
+                     url: server_config.restlet_url,
                      headers: {
                          'Content-Type': 'application/json',
                          'Authorization': 'Bearer ' + bearer_token
@@ -117,7 +118,7 @@ async function update_request(table_type) {
             const post_config = {
                 method: 'post',
                 maxBodyLength: Infinity,
-                url: 'https://tstdrv1278203.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=2522&deploy=1',
+                url: server_config.restlet_url ,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + bearer_token
@@ -127,7 +128,7 @@ async function update_request(table_type) {
             var post_response = await axios.request(post_config);
             if (post_response.data.type == "success") {
                 logger.info(`${table_type} fn update_request :: ${JSON.stringify(post_response.data)} :: ${JSON.stringify(select_db)}`);
-            }else{
+            } else {
                 logger.error(`${table_type} fn update_request :: ${JSON.stringify(post_response.data)} :: ${JSON.stringify(select_db)}`);
             }
         }
@@ -137,5 +138,11 @@ async function update_request(table_type) {
 }
 
 
-//insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
-update_request("HCMS_E2C_EVLM_TRNS_PTCL");
+insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
+//update_request("HCMS_E2C_EVLM_TRNS_PTCL");
+
+/*
+setInterval(function () {
+    insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
+}, 60 * 1000 * server_config.run_every_minutes);
+*/
