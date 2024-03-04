@@ -137,6 +137,10 @@ async function update_request(table_type) {
     }
 }
 
+async function select_HCMS_ACCT_TRSC_PTCL(){
+    var selectResult;
+    
+}
 
 insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
 //update_request("HCMS_E2C_EVLM_TRNS_PTCL");
