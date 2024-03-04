@@ -121,10 +121,11 @@ async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
 
 async function select_HCMS_ACCT_TRSC_PTCL() {
     const query = `select * from HCMS_ACCT_TRSC_PTCL where NS_INTFC IS NULL;`
-    executeQuery(query)
+    return await executeQuery(query);
 }
 
 module.exports = {
     insert_HCMS_E2C_EVLM_TRNS_PTCL,
-    select_HCMS_E2C_EVLM_TRNS_PTCL_to_update
+    select_HCMS_E2C_EVLM_TRNS_PTCL_to_update,
+    select_HCMS_ACCT_TRSC_PTCL
 };
