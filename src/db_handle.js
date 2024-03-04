@@ -1,6 +1,7 @@
 // 필요한 패키지 로드
 require('dotenv').config();
 const sql = require('mssql');
+const logger = require("./logger.js");
 
 const poolConfig = {
     user: process.env.DB_USER,
@@ -26,7 +27,7 @@ async function executeQuery(querystring) {
         await pool.connect();
         var result = { "type": "success", "result": await pool.query(querystring) };
     } catch (err) {
-        console.error('Error occurred:', err);
+        logger.error(`DB : executeQuery :: ${err} :: ${querystring}`);
         var result = { "type": "error", "error": err.message };
     } finally {
         pool.close();
@@ -36,9 +37,10 @@ async function executeQuery(querystring) {
 
 
 async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
-    var valuesString = ``;
-    dataObj.forEach(each => {
-        let values = `(
+    try {
+        var valuesString = ``;
+        dataObj.forEach(each => {
+            let values = `(
             '${each.values.custrecord_swk_cms_cust_no}',
             ${each.values.custrecord_swk_cms_amt},
             '${each.values.internalid[0].value}',
@@ -55,13 +57,13 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
               FORMAT(GETDATE(), 'HHmmss'),
               '${each.values.custrecord_swk_cms_sms_if_flag}',
               '${each.values.custrecord_swk_cms_type}',
-              'I'
+              'R'
               )`
-        if (valuesString != ``) { valuesString += `, ` }
-        valuesString += values;
-    });
+            if (valuesString != ``) { valuesString += `, ` }
+            valuesString += values;
+        });
 
-    let insertQ = `INSERT INTO [dbo].[HCMS_E2C_EVLM_TRNS_PTCL]		
+        let insertQ = `INSERT INTO [dbo].[HCMS_E2C_EVLM_TRNS_PTCL]		
       (		
       [CUST_NO],
       [TRSC_AMT],
@@ -83,24 +85,31 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
       ) 
       OUTPUT inserted.ERP_LNK_CTT, inserted.REG_DT, inserted.REG_TM, inserted.CMSV_TRMS_ST_CD
       VALUES `+ valuesString;
-    let result = executeQuery(insertQ);
 
-    return result;
+        let result = executeQuery(insertQ);
+        return result;
+    } catch (e) {
+        logger.error("HCMS_E2C_EVLM_TRNS_PTCL DB : insert_ :: " + e)
+    }
 }
 
 async function select_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
-    var result = []
-    await Promise.all(
-        dataObj.map(async (element) => {
-            await pool.connect();
-            let filename = element["values"]["GROUP(custrecord_swk_cms_transfer_file)"];
-            let query = `select [ERP_LNK_CTT],[REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] from [HCMS_E2C_EVLM_TRNS_PTCL] where APNX_FILE_NM= '${filename}'; `
-            await executeQuery(query).then(resultObj => {
-                result.push(...resultObj["result"]["recordset"]);
+    try {
+        var result = []
+        await Promise.all(
+            dataObj.map(async (element) => {
+                await pool.connect();
+                let filename = element["values"]["GROUP(custrecord_swk_cms_transfer_file)"];
+                let query = `select [ERP_LNK_CTT],[REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] from [HCMS_E2C_EVLM_TRNS_PTCL] where APNX_FILE_NM= '${filename}' AND TRMS_ST_CTT is not null; `
+                await executeQuery(query).then(resultObj => {
+                    result.push(...resultObj["result"]["recordset"]);
+                })
             })
-        })
-    )
-    return result;
+        )
+        return result;
+    } catch (e) {
+        logger.error("HCMS_E2C_EVLM_TRNS_PTCL DB : select_ :: " + e)
+    }
 }
 
 module.exports = {
