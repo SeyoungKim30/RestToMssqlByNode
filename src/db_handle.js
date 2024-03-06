@@ -120,7 +120,8 @@ async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
 }
 
 async function select_HCMS_ACCT_TRSC_PTCL() {
-    const query = `select * from HCMS_ACCT_TRSC_PTCL where NS_INTFC IS NULL;`
+    const query = `update [HCMS_ACCT_TRSC_PTCL] set NS_INTFC= GETDATE() output inserted.* where NS_INTFC IS NULL;`
+    //const query = `update [HCMS_ACCT_TRSC_PTCL] set NS_INTFC= GETDATE() output inserted.* where TRSC_DT = '20231130';`
     return await executeQuery(query);
 }
 

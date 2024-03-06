@@ -2,6 +2,7 @@ require('dotenv').config();
 const server_config = require('../config.json');
 const db_handle = require('./db_handle.js')
 const logger = require("./logger.js");
+const oauth = require("./oauth.js")
 
 const bodyParser = require("body-parser");
 const axios = require("axios");
@@ -13,31 +14,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
-async function get_access_token() {
-    try {
-        let data = qs.stringify({
-            'refresh_token': process.env.refresh_token,
-            'redirect_uri': server_config.redirect_uri,
-            'grant_type': 'refresh_token'
-        });
-
-        let token_config = {
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: server_config.oauth2_url,
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': 'Basic ' + process.env.basic_authorization
-            },
-            data: data
-        };
-        let response = await axios.request(token_config);
-        logger.http(`fn get_access_token :: ` + response)
-        return response.data.access_token;
-    } catch (e) {
-        logger.error("fn get_access_token :: " + e)
-    }
-}
 
 async function axios_get(table_type, query_type, bearer_token) {
     /*
@@ -56,7 +32,7 @@ async function axios_get(table_type, query_type, bearer_token) {
 }
 
 async function insert_request(table_type) {
-    var bearer_token = await get_access_token();
+    var bearer_token = await oauth.get_access_token();
     var response = await axios_get(table_type, "insert", bearer_token);
     logger.http(`${table_type} fn insert_request : axios_get :: ` + response)
     if (response.data.length > 0) {     //넣을거 있으면 insert 실행
@@ -80,7 +56,7 @@ async function insert_request(table_type) {
 }
 
 async function update_request(table_type) {
-    var bearer_token = await get_access_token();
+    var bearer_token = await oauth.get_access_token();
     var get_response = await axios_get(table_type, "update", bearer_token);      //업데이트 필요한 레코드의 file name
     async function selectFromDBTable(table_type, data){
         switch(table_type){
@@ -103,12 +79,12 @@ async function update_request(table_type) {
 }
 
 async function interface_HCMS_ACCT_TRSC_PTCL() {
-    const bearer_token = await get_access_token();
+    const bearer_token = await oauth.get_access_token();
     const db_result = await db_handle.select_HCMS_ACCT_TRSC_PTCL();
     const post_config={
         method: 'post',
         maxBodyLength: Infinity,
-        url: server_config.restlet_url,
+        url: server_config.restlet_HCMS_ACCT_TRSC_PTCL_url,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + bearer_token
@@ -144,7 +120,7 @@ async function put_request_to_ns(table_type, fn_name, put_data, bearer_token) {
 }
 
 //insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
-update_request("HCMS_E2C_EVLM_TRNS_PTCL");
+//update_request("HCMS_E2C_EVLM_TRNS_PTCL");
 interface_HCMS_ACCT_TRSC_PTCL();
 
 /*
