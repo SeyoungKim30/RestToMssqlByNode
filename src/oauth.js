@@ -41,7 +41,7 @@ async function get_access_token() {
         var stringifiedJwtPayload = JSON.stringify(jwtPayload);
 
         // The secret is the private key of the certificate loaded into the client credentials mapping in NetSuite
-        let secret = fs.readFileSync('certification/sw2021d_key.pem', 'utf8');
+        let secret = fs.readFileSync('certification/'+process.env.CERTIFICATION_FILENAME, 'utf8');
         let encodedSecret = cryptojs.enc.Base64.stringify(cryptojs.enc.Utf8.parse(secret)); // we need to base64 encode the key
 
         // Sign the JWT with the PS256 algorithm (algorithm must match what is specified in JWT header).
@@ -70,12 +70,13 @@ async function get_access_token() {
         };
 
         var response = await axios.request(config);
+        console.log(response.data.access_token)
         return response.data.access_token
     } catch (e) {
         logger.error("fn get_access_token :: " + e)
     }
 }
-
+get_access_token();
 module.exports = {
     get_access_token
 };
