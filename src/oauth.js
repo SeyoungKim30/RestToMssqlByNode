@@ -70,13 +70,12 @@ async function get_access_token() {
         };
 
         var response = await axios.request(config);
-        console.log(response.data.access_token)
         return response.data.access_token
     } catch (e) {
         logger.error("fn get_access_token :: " + e)
     }
 }
-get_access_token();
+
 module.exports = {
     get_access_token
 };

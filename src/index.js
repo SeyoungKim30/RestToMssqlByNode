@@ -31,6 +31,25 @@ async function axios_get(table_type, query_type, bearer_token) {
     }
 }
 
+async function put_request_to_ns(table_type, fn_name, put_data, bearer_token) {
+    let put_config = {
+        method: "put",
+        maxBodyLength: Infinity,
+        url: server_config.restlet_url,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + bearer_token
+        },
+        data: JSON.stringify(put_data)
+    };
+    var put_response = await axios.request(put_config);
+    if (put_response.data.type == "success") {
+        logger.info(`${table_type} fn ${fn_name} : put_request_to_ns :: ${JSON.stringify(put_response.data)} :: ${JSON.stringify(put_data)}`);
+    } else {
+        logger.error(`${table_type} fn ${fn_name} : put_request_to_ns :: ${JSON.stringify(put_response.data)} :: ${JSON.stringify(put_data)}`);
+    }
+}
+
 async function insert_request(table_type) {
     var bearer_token = await oauth.get_access_token();
     var response = await axios_get(table_type, "insert", bearer_token);
@@ -56,32 +75,35 @@ async function insert_request(table_type) {
 }
 
 async function update_request(table_type) {
+    console.log('update 시작')
     var bearer_token = await oauth.get_access_token();
     var get_response = await axios_get(table_type, "update", bearer_token);      //업데이트 필요한 레코드의 file name
-    async function selectFromDBTable(table_type, data){
-        switch(table_type){
-            case "HCMS_E2C_EVLM_TRNS_PTCL" : 
+
+    async function selectFromDBTable(table_type, data) {
+        switch (table_type) {
+            case "HCMS_E2C_EVLM_TRNS_PTCL":
                 return await db_handle.select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(data);
             case "다른테이블":
                 return "다른 db select 함수"
         }
     }
     if (get_response.data.length > 0) {
-            var select_db = await selectFromDBTable("HCMS_E2C_EVLM_TRNS_PTCL",get_response.data);
-            const put_data = { "type": "success", "recordset": select_db.result.recordset }
-            if (select_db.result.recordset.length > 0) {
-                await put_request_to_ns(table_type, 'update_request', put_data, bearer_token)
-            }
-    }
-    if (get_response.data.length == 0 || select_db.result.recordset.length == 0) {
-        logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)} :: SELECT_RESULT= ${JSON.stringify(select_db.result)}`)
+        var select_db = await selectFromDBTable("HCMS_E2C_EVLM_TRNS_PTCL", get_response.data);
+        const put_data = { "type": "success", "recordset": select_db.result.recordset }
+        if (select_db.result.recordset.length > 0) {
+            await put_request_to_ns(table_type, 'update_request', put_data, bearer_token)
+        } else {
+            logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)} :: SELECT_RESULT= ${JSON.stringify(select_db.result)}`)
+        }
+    } else {
+        logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)} :: SELECT_RESULT= no result `)
     }
 }
 
 async function interface_HCMS_ACCT_TRSC_PTCL() {
     const bearer_token = await oauth.get_access_token();
     const db_result = await db_handle.select_HCMS_ACCT_TRSC_PTCL();
-    const post_config={
+    const post_config = {
         method: 'post',
         maxBodyLength: Infinity,
         url: server_config.restlet_HCMS_ACCT_TRSC_PTCL_url,
@@ -89,42 +111,26 @@ async function interface_HCMS_ACCT_TRSC_PTCL() {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + bearer_token
         },
-        data: JSON.stringify({type:"success",recordset:db_result.result.recordset})
+        data: JSON.stringify({ type: "success", recordset: db_result.result.recordset })
     };
     const post_result = await axios.request(post_config)
-    if(post_result.data.type=="success"){
+    if (post_result.data.type == "success") {
         logger.info(`HCMS_ACCT_TRSC_PTCL fn interface_ : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result.recordset)}`)
-    }else{
+    } else {
         logger.error(`HCMS_ACCT_TRSC_PTCL fn interface_ : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result)}`)
     }
-    
-}
 
-async function put_request_to_ns(table_type, fn_name, put_data, bearer_token) {
-    let put_config = {
-        method: "put",
-        maxBodyLength: Infinity,
-        url: server_config.restlet_url,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + bearer_token
-        },
-        data: JSON.stringify(put_data)
-    };
-    var put_response = await axios.request(put_config);
-    if (put_response.data.type == "success") {
-        logger.info(`${table_type} fn ${fn_name} : put_request_to_ns :: ${JSON.stringify(put_response.data)} :: ${JSON.stringify(put_data)}`);
-    } else {
-        logger.error(`${table_type} fn ${fn_name} : put_request_to_ns :: ${JSON.stringify(put_response.data)} :: ${JSON.stringify(put_data)}`);
-    }
 }
 
 //insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
 //update_request("HCMS_E2C_EVLM_TRNS_PTCL");
 interface_HCMS_ACCT_TRSC_PTCL();
 
-/*
-setInterval(function () {
+function run() {
     insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
-}, 60 * 1000 * server_config.run_every_minutes);
-*/
+    update_request("HCMS_E2C_EVLM_TRNS_PTCL");
+    interface_HCMS_ACCT_TRSC_PTCL();
+
+}
+
+//setInterval(run, 60 * 1000 * server_config.run_every_minutes);
