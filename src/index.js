@@ -101,8 +101,10 @@ async function update_request(table_type) {
 }
 
 async function interface_HCMS_ACCT_TRSC_PTCL() {
+    console.log('인터페이스 시작')
     const bearer_token = await oauth.get_access_token();
     const db_result = await db_handle.select_HCMS_ACCT_TRSC_PTCL();
+    console.log('db조회끝')
     const post_config = {
         method: 'post',
         maxBodyLength: Infinity,
