@@ -89,7 +89,7 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
         let result = executeQuery(insertQ);
         return result;
     } catch (e) {
-        logger.error("HCMS_E2C_EVLM_TRNS_PTCL DB : insert_ :: " + e)
+        logger.error("DB : HCMS_E2C_EVLM_TRNS_PTCL : insert_ :: " + e)
     }
 }
 
@@ -98,7 +98,7 @@ async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
         var filenamecondition = ``;
         if (dataObj.length == 1) {
             let each = dataObj[0];
-            filenamecondition = `APNX_FILE_NM = '${each["values"]["GROUP(custrecord_swk_cms_transfer_file) "]} '`
+            filenamecondition = `APNX_FILE_NM = '${each["values"]["GROUP(custrecord_swk_cms_transfer_file)"]} '`
         } else {
             for (let i = 0; i < dataObj.length; i++) {
                 if (i == 0) { filenamecondition += `(`; }
@@ -115,7 +115,7 @@ async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
         var result = await executeQuery(query)
         return result;
     } catch (e) {
-        logger.error("HCMS_E2C_EVLM_TRNS_PTCL DB : select_ :: " + e)
+        logger.error("DB : HCMS_E2C_EVLM_TRNS_PTCL : select_ :: " + e)
     }
 }
 

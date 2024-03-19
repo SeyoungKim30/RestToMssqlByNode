@@ -75,7 +75,6 @@ async function insert_request(table_type) {
 }
 
 async function update_request(table_type) {
-    console.log('update 시작')
     var bearer_token = await oauth.get_access_token();
     var get_response = await axios_get(table_type, "update", bearer_token);      //업데이트 필요한 레코드의 file name
 
@@ -101,10 +100,8 @@ async function update_request(table_type) {
 }
 
 async function interface_HCMS_ACCT_TRSC_PTCL() {
-    console.log('인터페이스 시작')
     const bearer_token = await oauth.get_access_token();
     const db_result = await db_handle.select_HCMS_ACCT_TRSC_PTCL();
-    console.log('db조회끝')
     const post_config = {
         method: 'post',
         maxBodyLength: Infinity,
@@ -126,13 +123,14 @@ async function interface_HCMS_ACCT_TRSC_PTCL() {
 
 //insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
 //update_request("HCMS_E2C_EVLM_TRNS_PTCL");
-interface_HCMS_ACCT_TRSC_PTCL();
+//interface_HCMS_ACCT_TRSC_PTCL();
 
 function run() {
+    console.log('RUN : '+new Date() )
     insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
     update_request("HCMS_E2C_EVLM_TRNS_PTCL");
     interface_HCMS_ACCT_TRSC_PTCL();
 
 }
 
-//setInterval(run, 60 * 1000 * server_config.run_every_minutes);
+setInterval(run, 60 * 1000 * server_config.run_every_minutes);
