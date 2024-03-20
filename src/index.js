@@ -129,8 +129,7 @@ function run() {
     console.log('RUN : '+new Date() )
     insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
     update_request("HCMS_E2C_EVLM_TRNS_PTCL");
-    interface_HCMS_ACCT_TRSC_PTCL();
-
 }
 
 setInterval(run, 60 * 1000 * server_config.run_every_minutes);
+setInterval(interface_HCMS_ACCT_TRSC_PTCL, 60 * 1000 * server_config.run_acct_trsc_ptcl);
