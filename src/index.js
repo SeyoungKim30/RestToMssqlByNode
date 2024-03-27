@@ -55,20 +55,25 @@ async function insert_request(table_type) {
     var response = await axios_get(table_type, "insert", bearer_token);
     logger.http(`${table_type} fn insert_request : axios_get :: ` + response)
     if (response.data.length > 0) {     //넣을거 있으면 insert 실행
+        var insert_result;
         if (table_type == "HCMS_E2C_EVLM_TRNS_PTCL") {
-            const insert_result = await db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data);
-            var data = {};
-            if (insert_result.type == "success") {
-                data["recordset"] = insert_result.result.recordset;
-                data["type"] = "success"
-                logger.info(`${table_type} fn insert_request : db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL : insert_result.type=success :: ` + JSON.stringify(insert_result))
-            } else if (insert_result.type == "error") {
-                data = insert_result;
-                data["recordset"] = response.data;      //받은거 insert 실패해서 다시 반환
-                logger.warn(`${table_type} fn insert_request : axios_get : db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL : insert_result.type=error :: ` + JSON.stringify(insert_result))
-            }
-            await put_request_to_ns(table_type, 'insert_request', data, bearer_token);
+            insert_result = await db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data);
+        } else if (table_type == 'HCMS_E2C_DMST_REMT_PTCL') {
+            insert_result = await db_handle.insert_HCMS_E2C_DMST_REMT_PTCL(response.data);
         }
+        var data = {};
+        if (insert_result.type == "success") {
+            data["recordset"] = insert_result.result.recordset;
+            data["type"] = "success"
+            data["table"] = table_type
+            logger.info(`${table_type} fn insert_request : db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL : insert_result.type=success :: ` + JSON.stringify(insert_result))
+        } else if (insert_result.type == "error") {
+            data = insert_result;
+            data["recordset"] = response.data;      //받은거 insert 실패해서 다시 반환
+            logger.warn(`${table_type} fn insert_request : axios_get : db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL : insert_result.type=error :: ` + JSON.stringify(insert_result))
+        }
+        await put_request_to_ns(table_type, 'insert_request', data, bearer_token);
+
     } else {
         logger.info(`${table_type} fn insert_request :: NOTHING TO INSERT.`)
     }
@@ -124,12 +129,16 @@ async function interface_HCMS_ACCT_TRSC_PTCL() {
 //insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
 //update_request("HCMS_E2C_EVLM_TRNS_PTCL");
 //interface_HCMS_ACCT_TRSC_PTCL();
-
+insert_request("HCMS_E2C_DMST_REMT_PTCL");
 function run() {
-    console.log('RUN : '+new Date() )
-    insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
-    update_request("HCMS_E2C_EVLM_TRNS_PTCL");
+    try {
+        console.log('RUN : ' + new Date())
+        insert_request("HCMS_E2C_EVLM_TRNS_PTCL");
+        update_request("HCMS_E2C_EVLM_TRNS_PTCL");
+    } catch (e) {
+        logger.error(e)
+    }
 }
 
-setInterval(run, 60 * 1000 * server_config.run_every_minutes);
-setInterval(interface_HCMS_ACCT_TRSC_PTCL, 60 * 1000 * server_config.run_acct_trsc_ptcl);
+//setInterval(run, 60 * 1000 * server_config.run_every_minutes);
+//setInterval(interface_HCMS_ACCT_TRSC_PTCL, 60 * 1000 * server_config.run_acct_trsc_ptcl);

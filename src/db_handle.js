@@ -125,8 +125,58 @@ async function select_HCMS_ACCT_TRSC_PTCL() {
     return await executeQuery(query);
 }
 
+/*****************************국내 외화*******************************/
+async function insert_HCMS_E2C_DMST_REMT_PTCL(dataObj) {
+    try {
+        var valuesString = ``;
+        dataObj.forEach(each => {
+            let values = `(
+                '${each.values.custrecord_swk_cms_cust_no}',
+                '${each.values.custrecord_swk_cms_amt}',
+                '${each.values.custrecord_swk_cms_curr}',
+                '${each.values.internalid[0].value}',
+                '${each.values.custrecord_swk_cms_rcv_holder}',
+                '${each.values.custrecord_swk_cms_rcv_acct}',
+                '${each.values.custrecord_swk_cms_bank_cd}',
+                '${each.values.custrecord_swk_cms_wdrw_acct}',
+                '0',
+                '${each.values.custrecord_swk_cms_transfer_file}',
+                '${each.values.custrecord_swk_cms_transfer_file_seq}',
+                CONVERT(CHAR(8), GETDATE(), 112),
+                FORMAT(GETDATE(), 'HHmmss')
+              )`
+            if (valuesString != ``) { valuesString += `, ` }
+            valuesString += values;
+        });
+//TRMS_ST_CTT : (0: 등록 ,1: 등록(CBS 전송 완료) , 2: 실행  ,3: 삭제)
+        let insertQ = `INSERT INTO [dbo].[HCMS_E2C_DMST_REMT_PTCL]		
+      (		
+        [CUST_NO],
+        [REMT_AMT],
+        [CMSV_CUR_CD],
+        [ERP_LNK_CTT],
+        [RMTE_NM1],
+        [CRYP_RMTE_ACCT_NO],
+        [BIC_CD],
+        [CRYP_WDRW_ACCT_NO],
+        [TRMS_ST_CTT],
+        [FILE_NM],
+        [SEQ_NO],
+        [REG_DT],
+        [REG_TM]
+      ) 
+      OUTPUT inserted.ERP_LNK_CTT, inserted.REG_DT, inserted.REG_TM, inserted.TRMS_ST_CTT
+      VALUES `+ valuesString;
+        let result = executeQuery(insertQ);
+        return result;
+    } catch (e) {
+        logger.error("DB : HCMS_E2C_DMST_REMT_PTCL : insert_ :: " + e)
+    }
+}
+
 module.exports = {
     insert_HCMS_E2C_EVLM_TRNS_PTCL,
     select_HCMS_E2C_EVLM_TRNS_PTCL_to_update,
-    select_HCMS_ACCT_TRSC_PTCL
+    select_HCMS_ACCT_TRSC_PTCL,
+    insert_HCMS_E2C_DMST_REMT_PTCL
 };
