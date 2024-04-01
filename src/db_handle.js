@@ -148,7 +148,7 @@ async function insert_HCMS_E2C_DMST_REMT_PTCL(dataObj) {
             if (valuesString != ``) { valuesString += `, ` }
             valuesString += values;
         });
-//TRMS_ST_CTT : (0: 등록 ,1: 등록(CBS 전송 완료) , 2: 실행  ,3: 삭제)
+        //TRMS_ST_CTT : (0: 등록 ,1: 등록(CBS 전송 완료) , 2: 실행  ,3: 삭제)
         let insertQ = `INSERT INTO [dbo].[HCMS_E2C_DMST_REMT_PTCL]		
       (		
         [CUST_NO],
@@ -173,10 +173,37 @@ async function insert_HCMS_E2C_DMST_REMT_PTCL(dataObj) {
         logger.error("DB : HCMS_E2C_DMST_REMT_PTCL : insert_ :: " + e)
     }
 }
+async function select_HCMS_E2C_DMST_REMT_PTCL_to_update(dataObj) {
+    //TRMS_ST_CTT가 0 이면 전송전, 1이면 CMS에서 넣어준거
+    try {
+        var filenamecondition = ``;
+        if (dataObj.length == 1) {
+            let each = dataObj[0];
+            filenamecondition = `FILE_NM = '${each["values"]["GROUP(custrecord_swk_cms_transfer_file)"]}'`
+        } else {
+            for (let i = 0; i < dataObj.length; i++) {
+                if (i == 0) { filenamecondition += `(`; }
+                let each = dataObj[i];
+                let filename = each["values"]["GROUP(custrecord_swk_cms_transfer_file)"];
+                filenamecondition += `FILE_NM = '${filename}' `;
+                if (i + 1 < dataObj.length) { filenamecondition += `OR `; }
+                if (i + 1 == dataObj.length) { filenamecondition += `)`; }
+            }
+        }
 
+        await pool.connect();
+        let query = `select * from [HCMS_E2C_DMST_REMT_PTCL]
+        where ${filenamecondition} AND TRMS_ST_CTT != '0' ; `
+        var result = await executeQuery(query)
+        return result;
+    } catch (e) {
+        logger.error("DB : HCMS_E2C_DMST_REMT_PTCL : select_ :: " + e)
+    }
+}
 module.exports = {
     insert_HCMS_E2C_EVLM_TRNS_PTCL,
     select_HCMS_E2C_EVLM_TRNS_PTCL_to_update,
     select_HCMS_ACCT_TRSC_PTCL,
-    insert_HCMS_E2C_DMST_REMT_PTCL
+    insert_HCMS_E2C_DMST_REMT_PTCL,
+    select_HCMS_E2C_DMST_REMT_PTCL_to_update
 };
