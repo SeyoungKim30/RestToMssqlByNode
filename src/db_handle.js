@@ -38,7 +38,7 @@ async function executeQuery(querystring) {
 
 async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
     try {
-        var valuesString = ``;
+        let valuesString = ``;
         dataObj.forEach(each => {
             let values = `(
             '${each.values.custrecord_swk_cms_cust_no}',
@@ -48,7 +48,7 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
             '${each.values.custrecord_swk_cms_rcv_acct}',
             '${each.values.custrecord_swk_cms_bank_cd}',
             '${each.values.custrecord_swk_cms_wdrw_acct}',
-            '${each.values.custrecord_swk_cms_cd}',
+
             '${each.values.custrecord_swk_cms_transfer_file}',
             ${each.values.custrecord_swk_cms_transfer_file_seq},
             '${each.values.custrecord_swk_cms_rcv_memo}',
@@ -72,7 +72,7 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
       [CRYP_RCV_ACCT_NO],
       [RCV_INST_DV_NO],
       [CRYP_WDRW_ACCT_NO],
-      [CMSV_CD],
+
       [APNX_FILE_NM],
       [REMT_SEQ_NO],
       [RCV_PSBK_MARK_CTT],
@@ -128,7 +128,7 @@ async function select_HCMS_ACCT_TRSC_PTCL() {
 /*****************************국내 외화*******************************/
 async function insert_HCMS_E2C_DMST_REMT_PTCL(dataObj) {
     try {
-        var valuesString = ``;
+        let valuesString = ``;
         dataObj.forEach(each => {
             let values = `(
                 '${each.values.custrecord_swk_cms_cust_no}',
@@ -200,10 +200,118 @@ async function select_HCMS_E2C_DMST_REMT_PTCL_to_update(dataObj) {
         logger.error("DB : HCMS_E2C_DMST_REMT_PTCL : select_ :: " + e)
     }
 }
+
+/*****************************해외 외화*******************************/
+async function insert_HCMS_E2C_OVRS_REMT_PTCL(dataObj) {
+    try {
+        let valuesString = ``;
+        dataObj.forEach(each => {
+            let values = `(
+                '${each.values.custrecord_swk_cms_cust_no}',
+                '${each.values.custrecord_swk_cms_amt}',
+                '${each.values.custrecord_swk_cms_curr}',
+                '${each.values.internalid[0].value}',
+                '${each.values.custrecord_swk_cms_bank_cd}',
+                '${each.values.custrecord_swk_cms_wdrw_acct}',
+                '${each.values.custrecord_swk_cms_comm_alot_dv_cd}',
+                '${each.values.custrecord_swk_cms_cryp_comm_wdrw_acct_n}',
+                '${each.values.custrecord_swk_cms_cnfr_imp_sche_dd_yn}',
+                '${each.values.custrecord_swk_cms_cnty_cd}',
+                '${each.values.custrecord_swk_cms_expt_cont_cncl_yn}',
+                '${each.values.custrecord_swk_cms_wdrw_acct}',
+                '${each.values.custrecord_swk_cms_frc_wdrw_amt}',
+                '${each.values.custrecord_swk_cms_hs_cd}',
+                '${each.values.custrecord_swk_cms_imp_dcl_no}',
+                '${each.values.custrecord_swk_cms_imp_usag_dv_cd}',
+                '${each.values.custrecord_swk_cms_krw_eqv_amt}',
+                '${each.values.custrecord_swk_cms_prc_trcn_cd}',
+                '${each.values.custrecord_swk_cms_cryp_rmte_acct_no}',
+                '${each.values.custrecord_swk_cms_rmte_adr1}',
+                '${each.values.custrecord_swk_cms_rmte_adr2}',
+                '${each.values.custrecord_swk_cms_rmte_adr3}',
+                '${each.values.custrecord_swk_cms_rcvg_bnk_adr1}',
+                '${each.values.custrecord_swk_cms_rcvg_bnk_adr2}',
+                '${each.values.custrecord_swk_cms_rcvg_bnk_adr3}',
+                '${each.values.custrecord_swk_cms_rcvg_bnk_nm}',
+                '${each.values.custrecord_swk_cms_cryp_rmte_emal_adr1}',
+                '${each.values.custrecord_swk_cms_cryp_rmte_emal_adr2}',
+                '${each.values.custrecord_swk_cms_rmte_nm1}',
+                '${each.values.custrecord_swk_cms_rmte_oder_mtr1}',
+                '${each.values.custrecord_swk_cms_rmte_oder_mtr2}',
+                '${each.values.custrecord_swk_cms_cryp_rmte_res_reg_no}',
+                '${each.values.custrecord_swk_cms_remt_apc_buss_br_no}',
+                '${each.values.custrecord_swk_cms_remt_rsn}',
+                '${each.values.custrecord_swk_cms_remt_rmrk}',
+                '${each.values.custrecord_swk_cms_transfer_file}',
+                ${each.values.custrecord_swk_cms_transfer_file_seq},
+                0,
+                CONVERT(CHAR(8), GETDATE(), 112),
+                FORMAT(GETDATE(), 'HHmmss')
+                )`                
+
+            if (valuesString != ``) { valuesString += `, ` }
+            valuesString += values;
+        });
+        //TRMS_ST_CTT : (0: 전송 , 1: CMS에 등록 , 2: 실행  ,3: 삭제)
+        let insertQ = `INSERT INTO [dbo].[HCMS_E2C_OVRS_REMT_PTCL]		
+      ([CUST_NO],
+        [REMT_AMT],
+        [CMSV_CUR_CD],
+        [ERP_LNK_CTT],
+        [BIC_CD],
+        [CRYP_WDRW_ACCT_NO],
+        [COMM_ALOT_DV_CD],
+        [CRYP_COMM_WDRW_ACCT_NO],
+        [CNFR_IMP_SCHE_DD_YN],
+        [CNTY_CD],
+        [EXPT_CONT_CNCL_YN],
+        [CRYP_FRC_WDRW_ACCT_NO],
+        [FRC_WDRW_AMT],
+        [HS_CD],
+        [IMP_DCL_NO],
+        [IMP_USAG_DV_CD],
+        [KRW_EQV_AMT],
+        [PRC_TRCN_CD],
+        [CRYP_RMTE_ACCT_NO],
+        [RMTE_ADR1],
+        [RMTE_ADR2],
+        [RMTE_ADR3],
+        [RCVG_BNK_ADR1],
+        [RCVG_BNK_ADR2],
+        [RCVG_BNK_ADR3],
+        [RCVG_BNK_NM1],
+        [CRYP_RMTE_EMAL_ADR1],
+        [CRYP_RMTE_EMAL_ADR2],
+        [RMTE_NM1],
+        [RMTE_ODER_MTR1],
+        [RMTE_ODER_MTR2],
+        [CRYP_RMTE_RES_REG_NO],
+        [REMT_APC_BUSS_BR_NO],
+        [REMT_RSN],
+        [REMT_RMRK],
+        [FILE_NM],
+        [SEQ_NO],
+        [TRMS_ST_CTT],
+        [REG_DT],
+        [REG_TM]
+      ) 
+      OUTPUT inserted.ERP_LNK_CTT, inserted.REG_DT, inserted.REG_TM, inserted.TRMS_ST_CTT
+      VALUES `+ valuesString;
+        let result = executeQuery(insertQ);
+        return result;
+    } catch (e) {
+        logger.error("DB : HCMS_E2C_DMST_REMT_PTCL : insert_ :: " + e)
+    }
+}
+
+async function select_HCMS_E2C_OVRS_REMT_PTCL_to_update(dataObj){}
+
 module.exports = {
     insert_HCMS_E2C_EVLM_TRNS_PTCL,
     select_HCMS_E2C_EVLM_TRNS_PTCL_to_update,
     select_HCMS_ACCT_TRSC_PTCL,
     insert_HCMS_E2C_DMST_REMT_PTCL,
-    select_HCMS_E2C_DMST_REMT_PTCL_to_update
+    select_HCMS_E2C_DMST_REMT_PTCL_to_update,
+    insert_HCMS_E2C_OVRS_REMT_PTCL,
+    select_HCMS_E2C_OVRS_REMT_PTCL_to_update
 };
