@@ -50,7 +50,7 @@ async function put_request_to_ns(fn_name, put_data, bearer_token) {
     }
 }
 
-async function insert_request(table_type,bearer_token) {
+async function insert_request(table_type, bearer_token) {
     var response = await axios_get(table_type, "insert", bearer_token);
     logger.http(`${table_type} fn insert_request : axios_get :: ` + response)
     if (response.data.length > 0) {     //넣을거 있으면 insert 실행
@@ -78,7 +78,7 @@ async function insert_request(table_type,bearer_token) {
     }
 }
 
-async function update_request(table_type,bearer_token) {
+async function update_request(table_type, bearer_token) {
     var get_response = await axios_get(table_type, "update", bearer_token);      //업데이트 필요한 레코드의 file name
     if (get_response.data.length <= 0) {
         logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)}`);
@@ -91,7 +91,7 @@ async function update_request(table_type,bearer_token) {
         case "HCMS_E2C_OVRS_REMT_PTCL": select_db = await db_handle.select_HCMS_E2C_OVRS_REMT_PTCL_to_update(get_response.data); break;
     }
     if (select_db.result.recordset.length > 0) {
-        const put_data = { "type": "success", "table":table_type ,"recordset": select_db.result.recordset}
+        const put_data = { "type": "success", "table": table_type, "recordset": select_db.result.recordset }
         await put_request_to_ns('update_request', put_data, bearer_token)
     } else {
         logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)} :: SELECT_RESULT= ${JSON.stringify(select_db.result)}`)
@@ -124,16 +124,13 @@ async function interface_HCMS_ACCT_TRSC_PTCL(bearer_token) {
 async function run_ptcl() {       //이체 요청
     try {
         console.log('RUN : ' + new Date())
-        try{
         var bearer_token = await oauth.get_access_token();
-    }catch(e){
-        logger.error(e)
-    }
-        insert_request("HCMS_E2C_EVLM_TRNS_PTCL",bearer_token);
-        update_request("HCMS_E2C_EVLM_TRNS_PTCL",bearer_token);
-        insert_request("HCMS_E2C_DMST_REMT_PTCL",bearer_token);
-        update_request("HCMS_E2C_DMST_REMT_PTCL",bearer_token);
-        insert_request("HCMS_E2C_OVRS_REMT_PTCL",bearer_token);
+        insert_request("HCMS_E2C_EVLM_TRNS_PTCL", bearer_token);
+        update_request("HCMS_E2C_EVLM_TRNS_PTCL", bearer_token);
+        //insert_request("HCMS_E2C_DMST_REMT_PTCL", bearer_token);
+        //update_request("HCMS_E2C_DMST_REMT_PTCL", bearer_token);
+        insert_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
+        update_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
     } catch (e) {
         logger.error('run_ptcl : ' + e)
     }

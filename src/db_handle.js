@@ -119,8 +119,13 @@ async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
     }
 }
 
+/********************** 거래 내역**********************/
 async function select_HCMS_ACCT_TRSC_PTCL() {
-    const query = `update [HCMS_ACCT_TRSC_PTCL] set NS_INTFC= GETDATE() output inserted.* where NS_INTFC IS NULL;`
+      const query = `WITH Top10Records AS ( SELECT TOP 10 * FROM [HCMS_ACCT_TRSC_PTCL] WHERE NS_INTFC IS NULL ORDER BY INDATE ASC )
+		UPDATE Top10Records SET NS_INTFC = GETDATE()
+		OUTPUT inserted.* ;`
+
+    //const query = `update [HCMS_ACCT_TRSC_PTCL] set NS_INTFC= GETDATE() output inserted.* where NS_INTFC IS NULL;`
     //테스트용 const query = `update [HCMS_ACCT_TRSC_PTCL] set NS_INTFC= GETDATE() output inserted.* where TRSC_DT = '20231130';`
     return await executeQuery(query);
 }
@@ -207,47 +212,46 @@ async function insert_HCMS_E2C_OVRS_REMT_PTCL(dataObj) {
         let valuesString = ``;
         dataObj.forEach(each => {
             let values = `(
-                '${each.values.custrecord_swk_cms_cust_no}',
+                NULLIF('${each.values.custrecord_swk_cms_cust_no}',''),
                 '${each.values.custrecord_swk_cms_amt}',
                 '${each.values.custrecord_swk_cms_curr}',
                 '${each.values.internalid[0].value}',
                 '${each.values.custrecord_swk_cms_bank_cd}',
-                '${each.values.custrecord_swk_cms_wdrw_acct}',
-                '${each.values.custrecord_swk_cms_comm_alot_dv_cd}',
-                '${each.values.custrecord_swk_cms_cryp_comm_wdrw_acct_n}',
-                '${each.values.custrecord_swk_cms_cnfr_imp_sche_dd_yn}',
-                '${each.values.custrecord_swk_cms_cnty_cd}',
-                '${each.values.custrecord_swk_cms_expt_cont_cncl_yn}',
-                '${each.values.custrecord_swk_cms_wdrw_acct}',
-                '${each.values.custrecord_swk_cms_frc_wdrw_amt}',
-                '${each.values.custrecord_swk_cms_hs_cd}',
-                '${each.values.custrecord_swk_cms_imp_dcl_no}',
-                '${each.values.custrecord_swk_cms_imp_usag_dv_cd}',
-                '${each.values.custrecord_swk_cms_krw_eqv_amt}',
-                '${each.values.custrecord_swk_cms_prc_trcn_cd}',
+                NULLIF('${each.values.custrecord_swk_cms_wdrw_acct}',''),
+                ${each.values.custrecord_swk_cms_comm_alot_dv_cd},
+                NULLIF('${each.values.custrecord_swk_cms_cnfr_imp_sche_dd_yn}',''),
+                NULLIF('${each.values.custrecord_swk_cms_cnty_cd}',''),
+                NULLIF('${each.values.custrecord_swk_cms_expt_cont_cncl_yn}',''),
+                NULLIF('${each.values.custrecord_swk_cms_wdrw_acct}',''),
+                ${each.values.custrecord_swk_cms_frc_wdrw_amt},
+                NULLIF('${each.values.custrecord_swk_cms_hs_cd}',''),
+                NULLIF('${each.values.custrecord_swk_cms_imp_dcl_no}',''),
+                NULLIF('${each.values.custrecord_swk_cms_imp_usag_dv_cd}',''),
+                ${each.values.custrecord_swk_cms_krw_eqv_amt},
+                NULLIF('${each.values.custrecord_swk_cms_prc_trcn_cd}',''),
                 '${each.values.custrecord_swk_cms_cryp_rmte_acct_no}',
-                '${each.values.custrecord_swk_cms_rmte_adr1}',
-                '${each.values.custrecord_swk_cms_rmte_adr2}',
-                '${each.values.custrecord_swk_cms_rmte_adr3}',
+                NULLIF('${each.values.custrecord_swk_cms_rmte_adr1}',''),
+                NULLIF('${each.values.custrecord_swk_cms_rmte_adr2}',''),
+                NULLIF('${each.values.custrecord_swk_cms_rmte_adr3}',''),
                 '${each.values.custrecord_swk_cms_rcvg_bnk_adr1}',
-                '${each.values.custrecord_swk_cms_rcvg_bnk_adr2}',
-                '${each.values.custrecord_swk_cms_rcvg_bnk_adr3}',
+                NULLIF('${each.values.custrecord_swk_cms_rcvg_bnk_adr2}',''),
+                NULLIF('${each.values.custrecord_swk_cms_rcvg_bnk_adr3}',''),
                 '${each.values.custrecord_swk_cms_rcvg_bnk_nm}',
-                '${each.values.custrecord_swk_cms_cryp_rmte_emal_adr1}',
-                '${each.values.custrecord_swk_cms_cryp_rmte_emal_adr2}',
+                NULLIF('${each.values.custrecord_swk_cms_cryp_rmte_emal_adr1}',''),
+                NULLIF('${each.values.custrecord_swk_cms_cryp_rmte_emal_adr2}',''),
                 '${each.values.custrecord_swk_cms_rmte_nm1}',
-                '${each.values.custrecord_swk_cms_rmte_oder_mtr1}',
-                '${each.values.custrecord_swk_cms_rmte_oder_mtr2}',
-                '${each.values.custrecord_swk_cms_cryp_rmte_res_reg_no}',
-                '${each.values.custrecord_swk_cms_remt_apc_buss_br_no}',
-                '${each.values.custrecord_swk_cms_remt_rsn}',
-                '${each.values.custrecord_swk_cms_remt_rmrk}',
+                NULLIF('${each.values.custrecord_swk_cms_rmte_oder_mtr1}',''),
+                NULLIF('${each.values.custrecord_swk_cms_rmte_oder_mtr2}',''),
+                NULLIF('${each.values.custrecord_swk_cms_cryp_rmte_res_reg_no}',''),
+                NULLIF('${each.values.custrecord_swk_cms_remt_apc_buss_br_no}',''),
+                NULLIF('${each.values.custrecord_swk_cms_remt_rsn}',''),
+                NULLIF('${each.values.custrecord_swk_cms_remt_rmrk}',''),
                 '${each.values.custrecord_swk_cms_transfer_file}',
-                ${each.values.custrecord_swk_cms_transfer_file_seq},
+                '${each.values.custrecord_swk_cms_transfer_file_seq}',
                 0,
                 CONVERT(CHAR(8), GETDATE(), 112),
                 FORMAT(GETDATE(), 'HHmmss')
-                )`                
+                )`
 
             if (valuesString != ``) { valuesString += `, ` }
             valuesString += values;
@@ -261,7 +265,6 @@ async function insert_HCMS_E2C_OVRS_REMT_PTCL(dataObj) {
         [BIC_CD],
         [CRYP_WDRW_ACCT_NO],
         [COMM_ALOT_DV_CD],
-        [CRYP_COMM_WDRW_ACCT_NO],
         [CNFR_IMP_SCHE_DD_YN],
         [CNTY_CD],
         [EXPT_CONT_CNCL_YN],
@@ -304,7 +307,33 @@ async function insert_HCMS_E2C_OVRS_REMT_PTCL(dataObj) {
     }
 }
 
-async function select_HCMS_E2C_OVRS_REMT_PTCL_to_update(dataObj){}
+async function select_HCMS_E2C_OVRS_REMT_PTCL_to_update(dataObj) {
+    //TRMS_ST_CTT가 0 이면 전송전, 1이면 CMS에서 넣어준거
+    try {
+        var filenamecondition = ``;
+        if (dataObj.length == 1) {
+            let each = dataObj[0];
+            filenamecondition = `FILE_NM = '${each["values"]["GROUP(custrecord_swk_cms_transfer_file)"]}'`
+        } else {
+            for (let i = 0; i < dataObj.length; i++) {
+                if (i == 0) { filenamecondition += `(`; }
+                let each = dataObj[i];
+                let filename = each["values"]["GROUP(custrecord_swk_cms_transfer_file)"];
+                filenamecondition += `FILE_NM = '${filename}' `;
+                if (i + 1 < dataObj.length) { filenamecondition += `OR `; }
+                if (i + 1 == dataObj.length) { filenamecondition += `)`; }
+            }
+        }
+
+        await pool.connect();
+        let query = `select * from [HCMS_E2C_OVRS_REMT_PTCL]
+            where ${filenamecondition} AND TRMS_ST_CTT != '0' ; `
+        var result = await executeQuery(query)
+        return result;
+    } catch (e) {
+        logger.error("DB : HCMS_E2C_OVRS_REMT_PTCL : select_ :: " + e)
+    }
+}
 
 module.exports = {
     insert_HCMS_E2C_EVLM_TRNS_PTCL,
