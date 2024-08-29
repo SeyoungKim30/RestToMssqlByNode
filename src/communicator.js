@@ -65,6 +65,7 @@ async function insert_request(table_type, bearer_token) {
             data["recordset"] = insert_result.result.recordset;
             data["type"] = "success"
             data["table"] = table_type
+            data["command"] = 'insert'
             logger.info(`${table_type} fn insert_request : db_handle.insert_ : insert_result.type=success :: ` + JSON.stringify(insert_result))
         } else if (insert_result.type == "error") {
             data = insert_result;
@@ -91,7 +92,7 @@ async function update_request(table_type, bearer_token) {
         case "HCMS_E2C_OVRS_REMT_PTCL": select_db = await db_handle.select_HCMS_E2C_OVRS_REMT_PTCL_to_update(get_response.data); break;
     }
     if (select_db.result.recordset.length > 0) {
-        const put_data = { "type": "success", "table": table_type, "recordset": select_db.result.recordset }
+        const put_data = { "type": "success", "table": table_type, "recordset": select_db.result.recordset, "command": "update" }
         await put_request_to_ns('update_request', put_data, bearer_token)
     } else {
         logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)} :: SELECT_RESULT= ${JSON.stringify(select_db.result)}`)
@@ -125,12 +126,13 @@ async function run_ptcl() {       //이체 요청
     try {
         console.log('RUN : ' + new Date())
         var bearer_token = await oauth.get_access_token();
-        insert_request("HCMS_E2C_EVLM_TRNS_PTCL", bearer_token);
-        update_request("HCMS_E2C_EVLM_TRNS_PTCL", bearer_token);
+        await update_request("HCMS_E2C_EVLM_TRNS_PTCL", bearer_token);
+        await insert_request("HCMS_E2C_EVLM_TRNS_PTCL", bearer_token);
+        await insert_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
+        await update_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
+
         //insert_request("HCMS_E2C_DMST_REMT_PTCL", bearer_token);
         //update_request("HCMS_E2C_DMST_REMT_PTCL", bearer_token);
-        insert_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
-        update_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
     } catch (e) {
         logger.error('run_ptcl : ' + e)
     }

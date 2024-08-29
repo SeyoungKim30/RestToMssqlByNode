@@ -48,17 +48,16 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
             '${each.values.custrecord_swk_cms_rcv_acct}',
             '${each.values.custrecord_swk_cms_bank_cd}',
             '${each.values.custrecord_swk_cms_wdrw_acct}',
-
             '${each.values.custrecord_swk_cms_transfer_file}',
             ${each.values.custrecord_swk_cms_transfer_file_seq},
-            '${each.values.custrecord_swk_cms_rcv_memo}',
-            '${each.values.custrecord_swk_cms_wdrw_memo}',
-              CONVERT(CHAR(8), GETDATE(), 112),
-              FORMAT(GETDATE(), 'HHmmss'),
-              '${each.values.custrecord_swk_cms_sms_if_flag}',
-              '${each.values.custrecord_swk_cms_type}',
-              'R'
-              )`
+            NULLIF('${each.values.custrecord_swk_cms_rcv_memo}',''),
+            NULLIF('${each.values.custrecord_swk_cms_wdrw_memo}',''),
+            CONVERT(CHAR(8), GETDATE(), 112),
+            FORMAT(GETDATE(), 'HHmmss'),
+            '${(each.values.custrecord_swk_cms_sms_if_flag=='')?'N':each.values.custrecord_swk_cms_sms_if_flag}',
+            '${each.values.custrecord_swk_cms_type}',
+            null
+            )`
             if (valuesString != ``) { valuesString += `, ` }
             valuesString += values;
         });
@@ -72,7 +71,6 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
       [CRYP_RCV_ACCT_NO],
       [RCV_INST_DV_NO],
       [CRYP_WDRW_ACCT_NO],
-
       [APNX_FILE_NM],
       [REMT_SEQ_NO],
       [RCV_PSBK_MARK_CTT],
@@ -86,7 +84,25 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
       OUTPUT inserted.ERP_LNK_CTT, inserted.REG_DT, inserted.REG_TM, inserted.CMSV_TRMS_ST_CD
       VALUES `+ valuesString;
 
-        let result = executeQuery(insertQ);
+        let result = await executeQuery(insertQ);
+
+        //중복오류일 경우 실제로 해당 레코드가 입력되어있는건지 구별해서 DB에 정상적으로 입력되었지만 NS에 상태가 전달되지 않는 row를 찾아 정상처리
+        if (result.type == 'error') {
+            if ((result.error).indexOf('PK_HCMS_E2C_EVLM_TRNS_PTCL') != -1) {
+                let reselect_query = `select * from [dbo].[HCMS_E2C_EVLM_TRNS_PTCL] where (ERP_LNK_CTT = ${dataObj[0].values.internalid[0].value} AND APNX_FILE_NM = '${dataObj[0].values.custrecord_swk_cms_transfer_file}' AND REMT_SEQ_NO = ${dataObj[0].values.custrecord_swk_cms_transfer_file_seq} )`
+                for (var i = 1; i < dataObj.length; i++) {
+                    reselect_query += ` OR (ERP_LNK_CTT = ${dataObj[i].values.internalid[0].value} AND APNX_FILE_NM = '${dataObj[i].values.custrecord_swk_cms_transfer_file}' AND REMT_SEQ_NO = ${dataObj[i].values.custrecord_swk_cms_transfer_file_seq} ) `
+                }
+                logger.http('재검색 : ' + reselect_query)
+                var re_result = await executeQuery(reselect_query);
+                //select 결과가 recordset이랑 같으면 
+                logger.http('re_result.result.recordset.length = ' + re_result.result.recordset.length)
+                if (re_result.result.recordset.length == dataObj.length) {
+                    result = re_result;
+                }
+                //안같으면 error인 result 그대로
+            }
+        }
         return result;
     } catch (e) {
         logger.error("DB : HCMS_E2C_EVLM_TRNS_PTCL : insert_ :: " + e)
@@ -111,7 +127,7 @@ async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
         }
 
         await pool.connect();
-        let query = `select [ERP_LNK_CTT],[REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] from [HCMS_E2C_EVLM_TRNS_PTCL] where ${filenamecondition} AND TRMS_ST_CTT is not null; `
+        let query = `select [ERP_LNK_CTT],[REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] from [HCMS_E2C_EVLM_TRNS_PTCL] where ${filenamecondition} AND (TRMS_ST_CTT is not null OR CMSV_TRMS_ST_CD='R'); `
         var result = await executeQuery(query)
         return result;
     } catch (e) {
@@ -121,8 +137,8 @@ async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
 
 /********************** 거래 내역**********************/
 async function select_HCMS_ACCT_TRSC_PTCL() {
-      const query = `WITH Top10Records AS ( SELECT TOP 10 * FROM [HCMS_ACCT_TRSC_PTCL] WHERE NS_INTFC IS NULL ORDER BY INDATE ASC )
-		UPDATE Top10Records SET NS_INTFC = GETDATE()
+    const query = `WITH Top500Records AS ( SELECT TOP 500 * FROM [HCMS_ACCT_TRSC_PTCL] WHERE NS_INTFC IS NULL ORDER BY INDATE ASC )
+		UPDATE Top500Records SET NS_INTFC = GETDATE()
 		OUTPUT inserted.* ;`
 
     //const query = `update [HCMS_ACCT_TRSC_PTCL] set NS_INTFC= GETDATE() output inserted.* where NS_INTFC IS NULL;`

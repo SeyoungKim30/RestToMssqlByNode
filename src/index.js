@@ -1,5 +1,6 @@
 const cmnct = require("./communicator.js")
 const server_config = require('../config.json');
+const logger = require("./logger.js");
 
 cmnct.run_ptcl();
 cmnct.run_acct();
