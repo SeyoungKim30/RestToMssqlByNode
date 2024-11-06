@@ -45,8 +45,10 @@ async function put_request_to_ns(fn_name, put_data, bearer_token) {
     var put_response = await axios.request(put_config);
     if (put_response.data.type == "success") {
         logger.info(`${put_data.table} fn ${fn_name} : put_request_to_ns :: ${JSON.stringify(put_response.data)} :: ${JSON.stringify(put_data)}`);
+        return true;
     } else {
         logger.error(`${put_data.table} fn ${fn_name} : put_request_to_ns :: ${JSON.stringify(put_response.data)} :: ${JSON.stringify(put_data)}`);
+        return false;
     }
 }
 
@@ -66,14 +68,15 @@ async function insert_request(table_type, bearer_token) {
             data["type"] = "success"
             data["table"] = table_type
             data["command"] = 'insert'
-            logger.info(`${table_type} fn insert_request : db_handle.insert_ : insert_result.type=success :: ` + JSON.stringify(insert_result))
+            logger.info(`${table_type} fn insert_request : db_handle.insert_ : insert_result.type=success :: ` + JSON.stringify(insert_result.result))
         } else if (insert_result.type == "error") {
-            data = insert_result;
+            data["type"] = "error"
+            data["error"] = insert_result.error
             data["recordset"] = response.data;      //받은거 insert 실패해서 다시 반환
-            logger.warn(`${table_type} fn insert_request : axios_get : db_handle.insert_ : insert_result.type=error :: ` + JSON.stringify(insert_result))
+            logger.error(`${table_type} fn insert_request : axios_get : db_handle.insert_ : insert_result.type=error :: ` + JSON.stringify(insert_result.error))
         }
-        await put_request_to_ns('insert_request', data, bearer_token);
-
+        var put_result = await put_request_to_ns('insert_request', data, bearer_token);
+        db_handle.pool_cloes(put_result,insert_result);
     } else {
         logger.info(`${table_type} fn insert_request :: NOTHING TO INSERT.`)
     }
