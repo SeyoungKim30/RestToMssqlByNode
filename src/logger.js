@@ -29,7 +29,7 @@ const logger = winston.createLogger({
       new winstonDaily({
          level: 'info',
          datePattern: 'YYYY-MM-DD',
-         dirname: logDir + '/info',
+         dirname: logDir  + '/info',
          filename: `%DATE%.log`,
          maxFiles: 50,
          zippedArchive: true,
@@ -57,22 +57,23 @@ const logger = winston.createLogger({
          datePattern: 'YYYY-MM-DD',
          dirname: logDir,
          filename: `%DATE%.exception.log`,
-         maxFiles: 50,
+         maxFiles: 30,
          zippedArchive: true,
       }),
 
    ],
 })
 
-
-logger.add(
-   new winston.transports.Console({
-      format: winston.format.combine(
-         winston.format.colorize(),
-         winston.format.simple(),
-      ),
-   }),
-);
+if (process.env.NODE_ENV !== 'production') {
+   logger.add(
+      new winston.transports.Console({
+         format: winston.format.combine(
+            winston.format.colorize(),
+            winston.format.simple(),
+         ),
+      }),
+   );
+}
 
 
 module.exports = logger;
