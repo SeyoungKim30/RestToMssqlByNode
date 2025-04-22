@@ -1,6 +1,6 @@
 require('dotenv').config();
 const server_config = require('../config.json');
-const db_handle = require('./db_handle.js')
+const db_handle = require('./dbHandle_mybatis.js')
 const logger = require("./logger.js");
 const oauth = require("./oauth.js")
 
@@ -51,7 +51,7 @@ async function put_request_to_ns(fn_name, put_data, bearer_token) {
         return false;
     }
 }
-
+/*
 async function insert_request(table_type, bearer_token) {
     var response = await axios_get(table_type, "insert", bearer_token);
     logger.http(`${table_type} fn insert_request : axios_get :: ` + response)
@@ -101,15 +101,15 @@ async function update_request(table_type, bearer_token) {
         logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)} :: SELECT_RESULT= ${JSON.stringify(select_db.result)}`)
     }
 }
+*/
 
-
-async function interface_HCMS_ACCT_TRSC_PTCL(bearer_token) {
-    const db_result = await db_handle.select_HCMS_ACCT_TRSC_PTCL();
+async function import_transaction(bearer_token) {
+    const db_result = await db_handle.select_importingTransaction();
     //if(db_result.result){}
     const post_config = {
         method: 'post',
         maxBodyLength: Infinity,
-        url: server_config.restlet_HCMS_ACCT_TRSC_PTCL_url,
+        url: server_config.SWK_RL_CMS_importTrsc,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + bearer_token
@@ -124,7 +124,7 @@ async function interface_HCMS_ACCT_TRSC_PTCL(bearer_token) {
     }
 
 }
-
+/*
 async function run_ptcl() {       //이체 요청
     try {
         console.log('RUN : ' + new Date())
@@ -140,17 +140,17 @@ async function run_ptcl() {       //이체 요청
         logger.error('run_ptcl : ' + e)
     }
 }
-
+*/
 async function run_acct() {        //match bank를 위한 계좌내역 가져오기
     try {
         var bearer_token = await oauth.get_access_token();
-        interface_HCMS_ACCT_TRSC_PTCL(bearer_token);
+        import_transaction(bearer_token);
     } catch (e) {
         logger.error(e)
     }
 }
 
 module.exports = {
-    run_ptcl,
+  //  run_ptcl,
     run_acct
 }

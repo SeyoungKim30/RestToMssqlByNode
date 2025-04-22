@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mapper1">  
+  <select id="select_importtrsc">
+   WITH Top500Records AS ( SELECT TOP 500 * FROM ${table_importtrsc} WHERE NS_INTFC IS NULL )
+		UPDATE Top500Records SET NS_INTFC = GETDATE()
+		OUTPUT inserted.* ;
+  </select>
+</mapper>

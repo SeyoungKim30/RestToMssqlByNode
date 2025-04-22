@@ -1,7 +1,12 @@
+/**
+ * 2025/04/03 dbHandle_mybatis.js 로 교체
+ */
+
 // 필요한 패키지 로드
 require('dotenv').config();
 const sql = require('mssql');
 const logger = require("./logger.js");
+const mybatisMapper = require('mybatis-mapper');  //매핑할 마이바티스
 
 const poolConfig = {
     user: process.env.DB_USER,
@@ -21,7 +26,7 @@ const poolConfig = {
 
 const pool = new sql.ConnectionPool(poolConfig);
 
-async function pool_cloes(put_result, insert_result){
+async function pool_cloes(put_result, insert_result) {
     try {
         if (put_result) {
             await insert_result.transaction.commit();
@@ -33,10 +38,10 @@ async function pool_cloes(put_result, insert_result){
     } catch (err) {
         console.error("Error during transaction handling", err);
         if (insert_result.transaction) {
-            await insert_result.transaction.rollback(); 
+            await insert_result.transaction.rollback();
         }
     } finally {
-        pool.close(); 
+        pool.close();
     }
 }
 
@@ -133,7 +138,7 @@ async function insert_HCMS_E2C_EVLM_TRNS_PTCL(dataObj) {
 
         //중복오류일 경우 실제로 해당 레코드가 입력되어있는건지 구별해서 DB에 정상적으로 입력되었지만 NS에 상태가 전달되지 않는 row를 찾아 정상처리
         if (result.type == 'error') {
-            if ((result.error).indexOf('PK_HCMS_E2C_EVLM_TRNS_PTCL') != -1 || (result.error).indexOf('HCMS_E2C_EVLM_TRNS_PTCL_PK') != -1 ) {
+            if ((result.error).indexOf('PK_HCMS_E2C_EVLM_TRNS_PTCL') != -1) {
                 let reselect_query = `select * from [dbo].[HCMS_E2C_EVLM_TRNS_PTCL] where (ERP_LNK_CTT = ${dataObj[0].values.internalid[0].value} AND APNX_FILE_NM = '${dataObj[0].values.custrecord_swk_cms_transfer_file}' AND REMT_SEQ_NO = ${dataObj[0].values.custrecord_swk_cms_transfer_file_seq} )`
                 for (var i = 1; i < dataObj.length; i++) {
                     reselect_query += ` OR (ERP_LNK_CTT = ${dataObj[i].values.internalid[0].value} AND APNX_FILE_NM = '${dataObj[i].values.custrecord_swk_cms_transfer_file}' AND REMT_SEQ_NO = ${dataObj[i].values.custrecord_swk_cms_transfer_file_seq} ) `
@@ -179,13 +184,23 @@ async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
 }
 
 /********************** 거래 내역**********************/
-async function select_HCMS_ACCT_TRSC_PTCL() {
+async function select_importingTransaction() {
+    mybatisMapper.createMapper(['./fruits.xml']);
+
+    // SQL Parameters
+    var param = {
+        category: 'apple',
+        price: 100
+    }
+
+    // Get SQL Statement
+    var format = { language: 'sql', indent: '  ' };
+    var query = mybatisMapper.getStatement('fruit', 'testBasic', param, format);
+
     const query = `WITH Top500Records AS ( SELECT TOP 500 * FROM [HCMS_ACCT_TRSC_PTCL] WHERE NS_INTFC IS NULL ORDER BY INDATE ASC )
 		UPDATE Top500Records SET NS_INTFC = GETDATE()
 		OUTPUT inserted.* ;`
 
-    //const query = `update [HCMS_ACCT_TRSC_PTCL] set NS_INTFC= GETDATE() output inserted.* where NS_INTFC IS NULL;`
-    //테스트용 const query = `update [HCMS_ACCT_TRSC_PTCL] set NS_INTFC= GETDATE() output inserted.* where TRSC_DT = '20231130';`
     return await executeQuery(query);
 }
 
@@ -363,7 +378,7 @@ async function insert_HCMS_E2C_OVRS_REMT_PTCL(dataObj) {
 
         //중복오류일 경우 실제로 해당 레코드가 입력되어있는건지 구별해서 DB에 정상적으로 입력되었지만 NS에 상태가 전달되지 않는 row를 찾아 정상처리
         if (result.type == 'error') {
-            if ((result.error).indexOf('PK_HCMS_E2C_OVRS_REMT_PTCL') != -1 || (result.error).indexOf('HCMS_E2C_OVRS_REMT_PTCL_PK') != -1) {
+            if ((result.error).indexOf('PK_HCMS_E2C_OVRS_REMT_PTCL') != -1) {
                 let reselect_query = `select * from [dbo].[HCMS_E2C_OVRS_REMT_PTCL] where (ERP_LNK_CTT = ${dataObj[0].values.internalid[0].value} AND FILE_NM = '${dataObj[0].values.custrecord_swk_cms_transfer_file}' AND SEQ_NO = ${dataObj[0].values.custrecord_swk_cms_transfer_file_seq} )`
                 for (var i = 1; i < dataObj.length; i++) {
                     reselect_query += ` OR (ERP_LNK_CTT = ${dataObj[i].values.internalid[0].value} AND FILE_NM = '${dataObj[i].values.custrecord_swk_cms_transfer_file}' AND SEQ_NO = ${dataObj[i].values.custrecord_swk_cms_transfer_file_seq} ) `
@@ -374,13 +389,13 @@ async function insert_HCMS_E2C_OVRS_REMT_PTCL(dataObj) {
                 logger.info('re_result.result.recordset.length = ' + re_result.result.recordset.length)
                 if (re_result.result.recordset.length == dataObj.length) {
                     return re_result;
-                }else{
+                } else {
                     return result;
                 }
                 //안같으면 error인 result 그대로
             }
-        }else{
-            logger.info('insert_HCMS_E2C_OVRS_REMT_PTCL에서 result.type = '+result.type)
+        } else {
+            logger.info('insert_HCMS_E2C_OVRS_REMT_PTCL에서 result.type = ' + result.type)
             return result;
         }
 
@@ -420,7 +435,7 @@ async function select_HCMS_E2C_OVRS_REMT_PTCL_to_update(dataObj) {
 module.exports = {
     insert_HCMS_E2C_EVLM_TRNS_PTCL,
     select_HCMS_E2C_EVLM_TRNS_PTCL_to_update,
-    select_HCMS_ACCT_TRSC_PTCL,
+    select_importingTransaction,
     insert_HCMS_E2C_DMST_REMT_PTCL,
     select_HCMS_E2C_DMST_REMT_PTCL_to_update,
     insert_HCMS_E2C_OVRS_REMT_PTCL,
