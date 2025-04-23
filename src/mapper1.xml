@@ -1,9 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="mapper1">  
+
+
+
+
   <select id="select_importtrsc">
    WITH Top500Records AS ( SELECT TOP 500 * FROM ${table_importtrsc} WHERE NS_INTFC IS NULL )
 		UPDATE Top500Records SET NS_INTFC = GETDATE()
 		OUTPUT inserted.* ;
   </select>
+
+
+
+<insert id="insert1" parameterType="map">
+  INSERT INTO [dbo].[${tableName}]
+  (
+    <foreach collection="columnMapping" item="col" separator=",">
+      [${col.dbColumn}]
+    </foreach>
+  )
+  OUTPUT inserted.ERP_LNK_CTT, inserted.REG_DT, inserted.REG_TM, inserted.CMSV_TRMS_ST_CD
+  VALUES
+  <foreach collection="dataList" item="row" separator=",">
+    (
+      <foreach collection="columnMapping" item="col" separator=",">
+        #{row[${col.dataKey}]}
+      </foreach>
+    )
+  </foreach>
+</insert>
+
+
 </mapper>

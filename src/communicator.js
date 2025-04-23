@@ -51,16 +51,16 @@ async function put_request_to_ns(fn_name, put_data, bearer_token) {
         return false;
     }
 }
-/*
+
 async function insert_request(table_type, bearer_token) {
     var response = await axios_get(table_type, "insert", bearer_token);
     logger.http(`${table_type} fn insert_request : axios_get :: ` + response)
     if (response.data.length > 0) {     //넣을거 있으면 insert 실행
         var insert_result;
         switch (table_type) {
-            case "HCMS_E2C_EVLM_TRNS_PTCL": insert_result = await db_handle.insert_HCMS_E2C_EVLM_TRNS_PTCL(response.data); break;
-            case "HCMS_E2C_DMST_REMT_PTCL": insert_result = await db_handle.insert_HCMS_E2C_DMST_REMT_PTCL(response.data); break;
-            case "HCMS_E2C_OVRS_REMT_PTCL": insert_result = await db_handle.insert_HCMS_E2C_OVRS_REMT_PTCL(response.data); break;
+            case "1": insert_result = await db_handle.insert_transfer(table_type,response.data); break;
+            case "2": insert_result = await db_handle.insert_transfer(table_type,response.data); break;
+            case "3": insert_result = await db_handle.insert_transfer(table_type,response.data); break;
         }
         var data = {};
         if (insert_result.type == "success") {
@@ -76,7 +76,7 @@ async function insert_request(table_type, bearer_token) {
             logger.error(`${table_type} fn insert_request : axios_get : db_handle.insert_ : insert_result.type=error :: ` + JSON.stringify(insert_result.error))
         }
         var put_result = await put_request_to_ns('insert_request', data, bearer_token);
-        db_handle.pool_cloes(put_result,insert_result);
+        db_handle.pool_cloes(put_result, insert_result);
     } else {
         logger.info(`${table_type} fn insert_request :: NOTHING TO INSERT.`)
     }
@@ -101,7 +101,7 @@ async function update_request(table_type, bearer_token) {
         logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)} :: SELECT_RESULT= ${JSON.stringify(select_db.result)}`)
     }
 }
-*/
+
 
 async function import_transaction(bearer_token) {
     const db_result = await db_handle.select_importingTransaction();
@@ -151,6 +151,6 @@ async function run_acct() {        //match bank를 위한 계좌내역 가져오
 }
 
 module.exports = {
-  //  run_ptcl,
+    //  run_ptcl,
     run_acct
 }
