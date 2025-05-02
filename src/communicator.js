@@ -54,31 +54,31 @@ async function put_request_to_ns(fn_name, put_data, bearer_token) {
 
 async function insert_request(table_type, bearer_token) {
     var response = await axios_get(table_type, "insert", bearer_token);
-    logger.http(`${table_type} fn insert_request : axios_get :: ` + response)
-    if (response.data.length > 0) {     //넣을거 있으면 insert 실행
-        var insert_result;
-        switch (table_type) {
-            case "1": insert_result = await db_handle.insert_transfer(table_type,response.data); break;
-            case "2": insert_result = await db_handle.insert_transfer(table_type,response.data); break;
-            case "3": insert_result = await db_handle.insert_transfer(table_type,response.data); break;
+    if (response.status == 200) {
+        logger.info(`fn insert_request : axios_get :: response success` + table_type)
+        if (response.data.datalist.length > 0) {     //넣을거 있으면 insert 실행
+            var insert_result;
+            insert_result = await db_handle.insert_transfer(table_type, response.data);
+            var data = {};
+            if (insert_result.type == "success") {
+                data["recordset"] = insert_result.result.recordset;
+                data["type"] = "success"
+                data["table"] = table_type
+                data["command"] = 'insert'
+                logger.info(`${table_type} fn insert_request : db_handle.insert_ : insert_result.type=success :: ` + JSON.stringify(insert_result.result))
+            } else if (insert_result.type == "error") {
+                data["type"] = "error"
+                data["error"] = insert_result.error
+                data["recordset"] = response.data;      //받은거 insert 실패해서 다시 반환
+                logger.error(`fn insert_request : axios_get : db_handle.insert_ : insert_result.type=error :: ` + JSON.stringify(insert_result.error))
+            }
+            var put_result = await put_request_to_ns('insert_request', data, bearer_token);
+            db_handle.pool_cloes(put_result, insert_result);
+        } else {
+            logger.info(`${table_type} fn insert_request :: NOTHING TO INSERT.`)
         }
-        var data = {};
-        if (insert_result.type == "success") {
-            data["recordset"] = insert_result.result.recordset;
-            data["type"] = "success"
-            data["table"] = table_type
-            data["command"] = 'insert'
-            logger.info(`${table_type} fn insert_request : db_handle.insert_ : insert_result.type=success :: ` + JSON.stringify(insert_result.result))
-        } else if (insert_result.type == "error") {
-            data["type"] = "error"
-            data["error"] = insert_result.error
-            data["recordset"] = response.data;      //받은거 insert 실패해서 다시 반환
-            logger.error(`${table_type} fn insert_request : axios_get : db_handle.insert_ : insert_result.type=error :: ` + JSON.stringify(insert_result.error))
-        }
-        var put_result = await put_request_to_ns('insert_request', data, bearer_token);
-        db_handle.pool_cloes(put_result, insert_result);
     } else {
-        logger.info(`${table_type} fn insert_request :: NOTHING TO INSERT.`)
+        logger.error(`fn insert_request : axios_get :: response fail` + JSON.stringify(response));
     }
 }
 
@@ -129,8 +129,8 @@ async function run_ptcl() {       //이체 요청
     try {
         console.log('RUN : ' + new Date())
         var bearer_token = await oauth.get_access_token();
-        await update_request("HCMS_E2C_EVLM_TRNS_PTCL", bearer_token);
-        await insert_request("HCMS_E2C_EVLM_TRNS_PTCL", bearer_token);
+        await update_request("1", bearer_token);
+        await insert_request("1", bearer_token);
         await insert_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
         await update_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
 
@@ -150,7 +150,19 @@ async function run_acct() {        //match bank를 위한 계좌내역 가져오
     }
 }
 
+async function run_test() {
+    try {
+        const bearer_token = await oauth.get_access_token();
+        insert_request("1", bearer_token)
+    } catch (e) {
+        logger.error(e)
+    }
+}
+
+
+
 module.exports = {
     //  run_ptcl,
-    run_acct
+    run_acct,
+    run_test
 }

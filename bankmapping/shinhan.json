@@ -1,0 +1,35 @@
+{
+    "tabletype": {
+        "1": "IB_BULK_TRAN",
+        "4": "IB_BULK_TRAN_PAY",
+        "5": "IB_ACCT_TR_DD"
+    },
+    "1": {
+        "tabletype": "IB_BULK_TRAN",
+        "insertColumn": [
+            "TRAN_DT",
+            "TRAN_DT_SEQ",
+            "TRAN_REMITTEE_NM",
+            "TRAN_JI_ACCT_NB",
+            "TRAN_CMS_CD",
+            "TRAN_AMT_REQ",
+            "TRAN_IP_BANK_ID",
+            "TRAN_IP_ACCT_NB",
+            "TRAN_REMITTEE_REALNM",
+            "TRAN_IP_NAEYONG",
+            "TRAN_JI_NAEYONG",
+            "GROUP_NM",
+            "LIST_NM"
+        ],
+        "outputColumn": [
+            "NS_RECORDID",
+            "TRAN_DT"
+        ],
+        "fileNameColumn":"",
+        "updateColumn":[]
+    },
+    "4": {},
+    "5": {
+        "tabletype": "IB_ACCT_TR_DD"
+    }
+}

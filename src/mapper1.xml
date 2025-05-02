@@ -14,21 +14,24 @@
 
 
 <insert id="insert1" parameterType="map">
-  INSERT INTO [dbo].[${tableName}]
+  INSERT INTO dbo.IB_BULK_TRAN
   (
-    <foreach collection="columnMapping" item="col" separator=",">
-      [${col.dbColumn}]
+    <foreach collection="columnList" item="col" separator=",">
+      ${col}
     </foreach>
   )
-  OUTPUT inserted.ERP_LNK_CTT, inserted.REG_DT, inserted.REG_TM, inserted.CMSV_TRMS_ST_CD
+  OUTPUT  <foreach collection="outputList" item="col" separator=",">
+  inserted.${col}
+  </foreach>
   VALUES
   <foreach collection="dataList" item="row" separator=",">
     (
-      <foreach collection="columnMapping" item="col" separator=",">
-        #{row[${col.dataKey}]}
+      <foreach collection="row" item="col" separator=",">
+      #{col}
       </foreach>
     )
   </foreach>
+  ;
 </insert>
 
 

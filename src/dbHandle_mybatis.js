@@ -1,9 +1,9 @@
 require('dotenv').config();
+const logger = require("./logger.js");
 const server_config = require('../config.json');
-const CONFIG = require('../config/dbinfo.json')
 const sql = require('mssql');
 const mybatisMapper = require('mybatis-mapper');  //매핑할 마이바티스
-const BANK = server_config.bank;
+const BankMapping = require(`../bankmapping/${server_config.bank}.json`)
 
 
 const pool = new sql.ConnectionPool({
@@ -41,7 +41,7 @@ async function select_importingTransaction() {
         mybatisMapper.createMapper(['./src/mapper1.xml']);
 
         // SQL Parameters
-        var param = { table_importtrsc: CONFIG.table_transaction }
+        var param = { table_importtrsc: BankMapping["5"]["tabletype"] }
         // Get SQL Statement
         var format = { language: 'sql' };
         var query = mybatisMapper.getStatement('mapper1', 'select_importtrsc', param, format);
@@ -52,30 +52,67 @@ async function select_importingTransaction() {
     }
 }
 
-async function insert_transfer(tabletype,data) {
-    mybatisMapper.createMapper(['./src/mapper1.xml']);
+async function insert_transfer(tabletype, data) {
+    /**
+     * {
+  columnlist: [
+    'TRAN_DT',
+    'TRAN_DT_SEQ',
+    'TRAN_REMITTEE_NM',
+    'TRAN_JI_ACCT_NB',
+    'TRAN_CMS_CD',
+    'TRAN_AMT_REQ',
+    'TRAN_IP_BANK_ID',
+    'TRAN_IP_ACCT_NB',
+    'TRAN_REMITTEE_REALNM',
+    'TRAN_IP_NAEYONG',
+    'TRAN_JI_NAEYONG',
+    'GROUP_NM',
+    'LIST_NM'
+  ],
+  datalist: [
+    [
+      '2025-05-01',
+      '1',
+      '4935',
+      '0271574035600015',
+      '',
+      '10000',
+      '218',
+      '234234242',
+      '',
+      '입금통장표시내역',
+      '출금통장표시내역',
+      '202505test - 과거전표',
+      '202505test - 과거전표'
+    ]
+  ]
+}
+     */
+    try {
+        mybatisMapper.createMapper(['./src/mapper1.xml']);
 
-    var format = { language: 'sql' };
+        var param = {
+            tableName: BankMapping[tabletype]["tabletype"],
+            outputList: BankMapping[tabletype]["outputColumn"],
+            columnList: data.columnlist,
+            dataList: data.datalist
+        }
+        var query = mybatisMapper.getStatement('mapper1', 'insert1', param, { language: 'sql' });
+        console.log("query : " + query)
+        var result = await executeQuery(query);
+        console.log(result)
+        return result;
+    } catch (e) { console.log("insert_transfer", e) }
+}
 
-    var param ={////////////////config에서 가져오기
-        tableName:CONFIG[BANK]["tabletype"][tabletype],
-        columnMapping: [
-        { dbColumn: "CUST_NO", dataKey: "custrecord_swk_cms_cust_no" },
-        { dbColumn: "TRSC_AMT", dataKey: "custrecord_swk_cms_amt" },
-        { dbColumn: "ERP_LNK_CTT", dataKey: "internalid" },
-      ],
-      dataList: [
-        {
-          custrecord_swk_cms_cust_no: '123',
-          custrecord_swk_cms_amt: 1000,
-          internalid: '456',
-        }]}
-
-
-    var query = mybatisMapper.getStatement('mapper1', 'insert1',   param     , format);
-    var result = await executeQuery(query);
+async function update_transfer(tabletype, data) {
+  let query = `select [ERP_LNK_CTT],[REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] 
+  from [HCMS_E2C_EVLM_TRNS_PTCL] 
+  where ${filenamecondition} AND (TRMS_ST_CTT is not null OR CMSV_TRMS_ST_CD='R'); `
 }
 
 module.exports = {
-    select_importingTransaction
+    select_importingTransaction,
+    insert_transfer
 }
