@@ -6,7 +6,6 @@
 require('dotenv').config();
 const sql = require('mssql');
 const logger = require("./logger.js");
-const mybatisMapper = require('mybatis-mapper');  //매핑할 마이바티스
 
 const poolConfig = {
     user: process.env.DB_USER,
@@ -183,26 +182,6 @@ async function select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(dataObj) {
     }
 }
 
-/********************** 거래 내역**********************/
-async function select_importingTransaction() {
-    mybatisMapper.createMapper(['./fruits.xml']);
-
-    // SQL Parameters
-    var param = {
-        category: 'apple',
-        price: 100
-    }
-
-    // Get SQL Statement
-    var format = { language: 'sql', indent: '  ' };
-    var query = mybatisMapper.getStatement('fruit', 'testBasic', param, format);
-
-    const query = `WITH Top500Records AS ( SELECT TOP 500 * FROM [HCMS_ACCT_TRSC_PTCL] WHERE NS_INTFC IS NULL ORDER BY INDATE ASC )
-		UPDATE Top500Records SET NS_INTFC = GETDATE()
-		OUTPUT inserted.* ;`
-
-    return await executeQuery(query);
-}
 
 /*****************************국내 외화*******************************/
 async function insert_HCMS_E2C_DMST_REMT_PTCL(dataObj) {
@@ -435,7 +414,6 @@ async function select_HCMS_E2C_OVRS_REMT_PTCL_to_update(dataObj) {
 module.exports = {
     insert_HCMS_E2C_EVLM_TRNS_PTCL,
     select_HCMS_E2C_EVLM_TRNS_PTCL_to_update,
-    select_importingTransaction,
     insert_HCMS_E2C_DMST_REMT_PTCL,
     select_HCMS_E2C_DMST_REMT_PTCL_to_update,
     insert_HCMS_E2C_OVRS_REMT_PTCL,

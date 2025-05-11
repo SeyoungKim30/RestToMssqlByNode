@@ -14,15 +14,13 @@
 
 
 <insert id="insert1" parameterType="map">
-  INSERT INTO dbo.IB_BULK_TRAN
+  INSERT INTO dbo.${tableName}
   (
     <foreach collection="columnList" item="col" separator=",">
       ${col}
     </foreach>
   )
-  OUTPUT  <foreach collection="outputList" item="col" separator=",">
-  inserted.${col}
-  </foreach>
+  OUTPUT  <foreach collection="outputList" item="col" separator=",">  inserted.${col} </foreach>
   VALUES
   <foreach collection="dataList" item="row" separator=",">
     (
@@ -34,5 +32,15 @@
   ;
 </insert>
 
+<select id="update1" parameterType="map">
+select 
+<foreach collection="columnList" item="col" separator=",">      ${col}    </foreach>
+from ${tableName}
+where 
+<foreach collection="fileName" item="name" separator=" OR ">
+${fileNameColumn} = #{name}
+ </foreach>
+ ;
+</select>
 
 </mapper>

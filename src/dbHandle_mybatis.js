@@ -5,7 +5,6 @@ const sql = require('mssql');
 const mybatisMapper = require('mybatis-mapper');  //매핑할 마이바티스
 const BankMapping = require(`../bankmapping/${server_config.bank}.json`)
 
-
 const pool = new sql.ConnectionPool({
     user: process.env.DB_USER,
     password: process.env.DB_PWD,
@@ -35,6 +34,49 @@ async function executeQuery(querystring) {
     return result;
 }
 
+async function executeQuery_noclose(querystring) {
+    let transaction;
+    try {
+        await pool.connect();
+        console.log("pool connected")
+        // 트랜잭션 시작
+        transaction = new sql.Transaction(pool);
+        await transaction.begin();
+
+        // 쿼리 실행
+        const request = new sql.Request(transaction);
+        const result = await request.query(querystring);
+        return { "type": "success", "result": result, "transaction": transaction };
+
+    } catch (err) {
+        // 오류 발생 시 롤백
+        if (transaction) {
+            await transaction.rollback();
+        }
+        logger.error(`DB : executeQuery :: ${err.message} :: ${querystring}`);
+        return { "type": "error", "error": err.message, "transaction": transaction };
+    }
+}
+
+async function pool_cloes(put_result, insert_result) {
+    console.log("pool close " + JSON.stringify(put_result))
+    console.log("insert_result " + (insert_result.transaction))
+    try {
+        if (put_result == true) {
+            await insert_result.transaction.commit();
+            console.log("put - pool 닫기 성공");
+        } else {
+            await insert_result.transaction.rollback();
+        }
+    } catch (e) {
+        logger.error(`DB : pool_cloes :: ${JSON.stringify(e)}`);
+        if (insert_result.transaction) {
+            await insert_result.transaction.rollback();
+        }
+    } finally {
+        pool.close();
+    }
+}
 
 async function select_importingTransaction() {
     try {
@@ -56,36 +98,9 @@ async function insert_transfer(tabletype, data) {
     /**
      * {
   columnlist: [
-    'TRAN_DT',
-    'TRAN_DT_SEQ',
-    'TRAN_REMITTEE_NM',
-    'TRAN_JI_ACCT_NB',
-    'TRAN_CMS_CD',
-    'TRAN_AMT_REQ',
-    'TRAN_IP_BANK_ID',
-    'TRAN_IP_ACCT_NB',
-    'TRAN_REMITTEE_REALNM',
-    'TRAN_IP_NAEYONG',
-    'TRAN_JI_NAEYONG',
-    'GROUP_NM',
-    'LIST_NM'
-  ],
+    'TRAN_DT',    'TRAN_DT_SEQ',    'TRAN_REMITTEE_NM',    'TRAN_JI_ACCT_NB',    'TRAN_CMS_CD',    'TRAN_AMT_REQ',    'TRAN_IP_BANK_ID',    'TRAN_IP_ACCT_NB',    'TRAN_REMITTEE_REALNM',    'TRAN_IP_NAEYONG',    'TRAN_JI_NAEYONG',    'GROUP_NM',    'LIST_NM'  ],
   datalist: [
-    [
-      '2025-05-01',
-      '1',
-      '4935',
-      '0271574035600015',
-      '',
-      '10000',
-      '218',
-      '234234242',
-      '',
-      '입금통장표시내역',
-      '출금통장표시내역',
-      '202505test - 과거전표',
-      '202505test - 과거전표'
-    ]
+    ['2025-05-01','1','4935','0271574035600015','','10000','218','234234242','','입금통장표시내역','출금통장표시내역','202505test - 과거전표','202505test - 과거전표']
   ]
 }
      */
@@ -99,20 +114,36 @@ async function insert_transfer(tabletype, data) {
             dataList: data.datalist
         }
         var query = mybatisMapper.getStatement('mapper1', 'insert1', param, { language: 'sql' });
-        console.log("query : " + query)
-        var result = await executeQuery(query);
-        console.log(result)
+        console.log(query)
+        var result = await executeQuery_noclose(query);
         return result;
-    } catch (e) { console.log("insert_transfer", e) }
+    } catch (e) {
+        logger.error(`DB : insert_transfer :: ${JSON.stringify(e)}`);
+    }
 }
 
 async function update_transfer(tabletype, data) {
-  let query = `select [ERP_LNK_CTT],[REG_DT],[REG_TM],[CMSV_RMTE_NM], [CMSV_TRMS_ST_CD],[TRNS_DATE],[TRMS_ST_CTT],[TRNS_TIME],[COMM],[ERR_CD],[ERR_MSG] 
-  from [HCMS_E2C_EVLM_TRNS_PTCL] 
-  where ${filenamecondition} AND (TRMS_ST_CTT is not null OR CMSV_TRMS_ST_CD='R'); `
+    try {
+        mybatisMapper.createMapper(['./src/mapper1.xml']);
+
+        var param = {
+            tableName: BankMapping[tabletype]["tabletype"],
+            fileNameColumn: BankMapping[tabletype]["fileNameColumn"],
+            fileName: data,
+            columnList: BankMapping[tabletype]["updateColumn"]
+        }
+        var query = mybatisMapper.getStatement('mapper1', 'update1', param, { language: 'sql' });
+        var result = await executeQuery(query);
+        return result;
+    } catch (e) {   
+        logger.error(`DB : update_transfer :: ${JSON.stringify(e)}`); 
+    }
 }
+
 
 module.exports = {
     select_importingTransaction,
-    insert_transfer
+    insert_transfer,
+    update_transfer,
+    pool_cloes
 }

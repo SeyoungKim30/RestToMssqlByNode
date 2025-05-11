@@ -72,8 +72,9 @@ async function insert_request(table_type, bearer_token) {
                 data["recordset"] = response.data;      //받은거 insert 실패해서 다시 반환
                 logger.error(`fn insert_request : axios_get : db_handle.insert_ : insert_result.type=error :: ` + JSON.stringify(insert_result.error))
             }
-            var put_result = await put_request_to_ns('insert_request', data, bearer_token);
-            db_handle.pool_cloes(put_result, insert_result);
+
+            var put_success = await put_request_to_ns('insert_request', data, bearer_token);
+            db_handle.pool_cloes(put_success, insert_result);
         } else {
             logger.info(`${table_type} fn insert_request :: NOTHING TO INSERT.`)
         }
@@ -84,16 +85,12 @@ async function insert_request(table_type, bearer_token) {
 
 async function update_request(table_type, bearer_token) {
     var get_response = await axios_get(table_type, "update", bearer_token);      //업데이트 필요한 레코드의 file name
+    console.log(get_response.data)
     if (get_response.data.length <= 0) {
         logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)}`);
         return;
     }
-    var select_db;
-    switch (table_type) {
-        case "HCMS_E2C_EVLM_TRNS_PTCL": select_db = await db_handle.select_HCMS_E2C_EVLM_TRNS_PTCL_to_update(get_response.data); break;
-        case "HCMS_E2C_DMST_REMT_PTCL": select_db = await db_handle.select_HCMS_E2C_DMST_REMT_PTCL_to_update(get_response.data); break;
-        case "HCMS_E2C_OVRS_REMT_PTCL": select_db = await db_handle.select_HCMS_E2C_OVRS_REMT_PTCL_to_update(get_response.data); break;
-    }
+    var select_db = await db_handle.update_transfer(table_type, get_response.data);
     if (select_db.result.recordset.length > 0) {
         const put_data = { "type": "success", "table": table_type, "recordset": select_db.result.recordset, "command": "update" }
         await put_request_to_ns('update_request', put_data, bearer_token)
@@ -118,29 +115,24 @@ async function import_transaction(bearer_token) {
     };
     const post_result = await axios.request(post_config)
     if (post_result.data.type == "success") {
-        logger.info(`HCMS_ACCT_TRSC_PTCL fn interface_ : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result.recordset)}`)
+        logger.info(`import_transaction : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result.recordset)}`)
     } else {
-        logger.error(`HCMS_ACCT_TRSC_PTCL fn interface_ : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result)}`)
+        logger.error(`import_transaction : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result)}`)
     }
 
 }
-/*
+
 async function run_ptcl() {       //이체 요청
     try {
-        console.log('RUN : ' + new Date())
+        logger.info('run_ptcl : ' + new Date())
         var bearer_token = await oauth.get_access_token();
         await update_request("1", bearer_token);
         await insert_request("1", bearer_token);
-        await insert_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
-        await update_request("HCMS_E2C_OVRS_REMT_PTCL", bearer_token);
-
-        //insert_request("HCMS_E2C_DMST_REMT_PTCL", bearer_token);
-        //update_request("HCMS_E2C_DMST_REMT_PTCL", bearer_token);
     } catch (e) {
         logger.error('run_ptcl : ' + e)
     }
 }
-*/
+
 async function run_acct() {        //match bank를 위한 계좌내역 가져오기
     try {
         var bearer_token = await oauth.get_access_token();
@@ -162,7 +154,7 @@ async function run_test() {
 
 
 module.exports = {
-    //  run_ptcl,
+    run_ptcl,
     run_acct,
     run_test
 }

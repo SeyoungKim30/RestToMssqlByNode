@@ -25,8 +25,22 @@
             "NS_RECORDID",
             "TRAN_DT"
         ],
-        "fileNameColumn":"",
-        "updateColumn":[]
+        "fileNameColumn": "GROUP_NM",
+        "updateColumn": [
+            "LIST_NB_SEQ",
+            "TRAN_JI_ACCT_NB",
+            "TRAN_AMT",
+            "TRAN_AMT_ERR",
+            "TRAN_FEE",
+            "TR_DATE",
+            "TR_TIME",
+            "TRAN_REG_DATE",
+            "TRAN_REG_TIME",
+            "TRAN_STATUS",
+            "TRAN_TYPE_CD",
+            "TRAN_RESULT_CD",
+            "NS_RECORDID"
+        ]
     },
     "4": {},
     "5": {
