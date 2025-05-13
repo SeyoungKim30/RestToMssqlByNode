@@ -91,18 +91,20 @@ async function update_request(table_type, bearer_token) {
         return;
     }
     var select_db = await db_handle.update_transfer(table_type, get_response.data);
+    if(select_db.result){
     if (select_db.result.recordset.length > 0) {
         const put_data = { "type": "success", "table": table_type, "recordset": select_db.result.recordset, "command": "update" }
         await put_request_to_ns('update_request', put_data, bearer_token)
     } else {
         logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)} :: SELECT_RESULT= ${JSON.stringify(select_db.result)}`)
     }
+    }
 }
 
 
 async function import_transaction(bearer_token) {
     const db_result = await db_handle.select_importingTransaction();
-    //if(db_result.result){}
+    if(db_result.result){
     const post_config = {
         method: 'post',
         maxBodyLength: Infinity,
@@ -119,7 +121,7 @@ async function import_transaction(bearer_token) {
     } else {
         logger.error(`import_transaction : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result)}`)
     }
-
+    }
 }
 
 async function run_ptcl() {       //이체 요청
