@@ -38,7 +38,6 @@ async function executeQuery_noclose(querystring) {
     let transaction;
     try {
         await pool.connect();
-        console.log("pool connected")
         // 트랜잭션 시작
         transaction = new sql.Transaction(pool);
         await transaction.begin();
@@ -59,8 +58,6 @@ async function executeQuery_noclose(querystring) {
 }
 
 async function pool_cloes(put_result, insert_result) {
-    console.log("pool close " + JSON.stringify(put_result))
-    console.log("insert_result " + (insert_result.transaction))
     try {
         if (put_result == true) {
             await insert_result.transaction.commit();
@@ -95,30 +92,119 @@ async function select_importingTransaction() {
 }
 
 async function insert_transfer(tabletype, data) {
+    
     /**
      * {
-  columnlist: [
-    'TRAN_DT',    'TRAN_DT_SEQ',    'TRAN_REMITTEE_NM',    'TRAN_JI_ACCT_NB',    'TRAN_CMS_CD',    'TRAN_AMT_REQ',    'TRAN_IP_BANK_ID',    'TRAN_IP_ACCT_NB',    'TRAN_REMITTEE_REALNM',    'TRAN_IP_NAEYONG',    'TRAN_JI_NAEYONG',    'GROUP_NM',    'LIST_NM'  ],
-  datalist: [
-    ['2025-05-01','1','4935','0271574035600015','','10000','218','234234242','','입금통장표시내역','출금통장표시내역','202505test - 과거전표','202505test - 과거전표']
-  ]
-}
+     * columnlist: [
+     * 'TRAN_DT','TRAN_DT_SEQ','TRAN_REMITTEE_NM','TRAN_JI_ACCT_NB','TRAN_CMS_CD','TRAN_AMT_REQ','TRAN_IP_BANK_ID','TRAN_IP_ACCT_NB','TRAN_REMITTEE_REALNM','TRAN_IP_NAEYONG','TRAN_JI_NAEYONG','GROUP_NM','LIST_NM'  ],
+     * datalist: [
+     * ['2025-05-01','1','4935','0271574035600015','','10000','218','234234242','','입금통장표시내역','출금통장표시내역','202505test - 과거전표','202505test - 과거전표']
+     * ]
+     * }
      */
     try {
-        mybatisMapper.createMapper(['./src/mapper1.xml']);
+        //mybatisMapper.createMapper(['./src/mapper1.xml']);
+
+        var columnMaxLength = (await executeQuery(`SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '${BankMapping[tabletype]["tabletype"]}';`)).result.recordset;
 
         var param = {
             tableName: BankMapping[tabletype]["tabletype"],
-            outputList: BankMapping[tabletype]["outputColumn"],
             columnList: data.columnlist,
-            dataList: data.datalist
+            dataList: data.datalist,
+            columnMaxLength: columnMaxLength
         }
-        var query = mybatisMapper.getStatement('mapper1', 'insert1', param, { language: 'sql' });
-        console.log(query)
+       // var query = insertQueryMapping(param);
+        var query = errorQueryMapping(param);
         var result = await executeQuery_noclose(query);
         return result;
     } catch (e) {
         logger.error(`DB : insert_transfer :: ${JSON.stringify(e)}`);
+    }
+}
+
+function errorQueryMapping(param) {
+
+    var query = `insert into dbo.${param.tableName} (`;
+    var outputQuery = ``;
+
+    for (eachColNameIndex in param.columnList) {
+        query = query + param.columnList[eachColNameIndex];
+        outputQuery = outputQuery + ` inserted.${param.columnList[eachColNameIndex]}`;
+        if ((param.columnList).length > Number(eachColNameIndex) + 1) {
+            query = query + `, `;
+            outputQuery = outputQuery + `, `;
+        }
+    }
+
+    query = query + `) OUTPUT ` + outputQuery + ` VALUES `
+
+    for (var dataObjectindex in param.dataList) {
+        query = query + `( `
+        var singleRow = param.dataList[dataObjectindex];
+        for (var columnIndex in singleRow) {
+            if (singleRow[columnIndex] != "") {
+                query = query + `'` + singleRow[columnIndex] + `'`;
+            } else {
+                query = query + `null`;
+            }
+            if (singleRow.length > (Number(columnIndex) + 1)) { query = query + `,`; }
+        }
+        query = query + `)`
+        if ((param.dataList).length > (Number(dataObjectindex) + 1)) { query = query + `,` }
+    }
+
+    return query;
+}
+
+function insertQueryMapping(param) {
+    try {
+        var columnNameLength = [];
+        var query = `insert into dbo.${param.tableName} (`;
+        var outputQuery = ``;
+
+        for (eachColNameIndex in param.columnList) {
+            let columnMaxLengthObject = (param.columnMaxLength).filter((each) => each.COLUMN_NAME == param.columnList[eachColNameIndex])
+            if (columnMaxLengthObject != null) {
+                columnNameLength[eachColNameIndex] = columnMaxLengthObject[0];
+            } else {
+                columnNameLength[eachColNameIndex] = { COLUMN_NAME: param.columnList[eachColNameIndex], CHARACTER_MAXIMUM_LENGTH: null }
+            }
+            query = query + param.columnList[eachColNameIndex];
+            outputQuery = outputQuery + ` inserted.${param.columnList[eachColNameIndex]}`;
+            if ((param.columnList).length > Number(eachColNameIndex) + 1) {
+                query = query + `, `;
+                outputQuery = outputQuery + `, `;
+            }
+        }
+
+        query = query + `) OUTPUT ` + outputQuery + ` VALUES `
+
+        for (var dataObjectindex in param.dataList) {
+            query = query + `( `
+            var singleRow = param.dataList[dataObjectindex];
+            for (var columnIndex in singleRow) {
+                if (singleRow[columnIndex] != "") {
+                    const MaxLength = columnNameLength[columnIndex].CHARACTER_MAXIMUM_LENGTH;
+                    if (MaxLength) {
+                        query = query + `
+                        CASE WHEN LEN('${singleRow[columnIndex]}') = DATALENGTH('${singleRow[columnIndex]}') 
+                        THEN LEFT('${singleRow[columnIndex]}', ${columnNameLength[columnIndex].CHARACTER_MAXIMUM_LENGTH})
+                        ELSE LEFT('${singleRow[columnIndex]}', ${(columnNameLength[columnIndex].CHARACTER_MAXIMUM_LENGTH) / 2}) END `;
+                    } else {
+                        query = query + `'` + singleRow[columnIndex] + `'`
+                    }
+                } else {
+                    query = query + `null`;
+                }
+                if (singleRow.length > (Number(columnIndex) + 1)) { query = query + `,`; }
+            }
+            query = query + `)`
+            if ((param.dataList).length > (Number(dataObjectindex) + 1)) { query = query + `,` }
+        }
+
+        return query;
+    } catch (e) {
+        logger.error(e)
     }
 }
 
@@ -135,8 +221,8 @@ async function update_transfer(tabletype, data) {
         var query = mybatisMapper.getStatement('mapper1', 'update1', param, { language: 'sql' });
         var result = await executeQuery(query);
         return result;
-    } catch (e) {   
-        logger.error(`DB : update_transfer :: ${JSON.stringify(e)}`); 
+    } catch (e) {
+        logger.error(`DB : update_transfer :: ${JSON.stringify(e)}`);
     }
 }
 
@@ -145,5 +231,6 @@ module.exports = {
     select_importingTransaction,
     insert_transfer,
     update_transfer,
-    pool_cloes
+    pool_cloes,
+    insertQueryMapping
 }

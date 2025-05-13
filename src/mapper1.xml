@@ -24,13 +24,18 @@
   VALUES
   <foreach collection="dataList" item="row" separator=",">
     (
-      <foreach collection="row" item="col" separator=",">
-      #{col}
+      <foreach collection="row" item="col" separator="," index="index">
+        <foreach collection="columnMaxLength" item="eachLength">
+          <if test="eachLength.COLUMN_NAME">
+          #{col}
+          </if>
+        </foreach>
       </foreach>
     )
   </foreach>
   ;
 </insert>
+
 
 <select id="update1" parameterType="map">
 select 
@@ -42,5 +47,6 @@ ${fileNameColumn} = #{name}
  </foreach>
  ;
 </select>
+
 
 </mapper>

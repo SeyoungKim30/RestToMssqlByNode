@@ -19,11 +19,8 @@
             "TRAN_IP_NAEYONG",
             "TRAN_JI_NAEYONG",
             "GROUP_NM",
-            "LIST_NM"
-        ],
-        "outputColumn": [
-            "NS_RECORDID",
-            "TRAN_DT"
+            "LIST_NM",
+            "NS_RECORDID"
         ],
         "fileNameColumn": "GROUP_NM",
         "updateColumn": [

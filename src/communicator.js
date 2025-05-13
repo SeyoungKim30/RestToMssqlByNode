@@ -62,15 +62,15 @@ async function insert_request(table_type, bearer_token) {
             var data = {};
             if (insert_result.type == "success") {
                 data["recordset"] = insert_result.result.recordset;
-                data["type"] = "success"
-                data["table"] = table_type
-                data["command"] = 'insert'
+                data["type"] = "success";
+                data["table"] = table_type;
+                data["command"] = 'insert';
                 logger.info(`${table_type} fn insert_request : db_handle.insert_ : insert_result.type=success :: ` + JSON.stringify(insert_result.result))
             } else if (insert_result.type == "error") {
-                data["type"] = "error"
-                data["error"] = insert_result.error
-                data["recordset"] = response.data;      //받은거 insert 실패해서 다시 반환
-                logger.error(`fn insert_request : axios_get : db_handle.insert_ : insert_result.type=error :: ` + JSON.stringify(insert_result.error))
+                data["type"] = "error";
+                data["error"] = insert_result.error;
+                data["table"] = table_type;
+                data["recordset"] = response.data.datalist;      //받은거 insert 실패해서 다시 반환
             }
 
             var put_success = await put_request_to_ns('insert_request', data, bearer_token);
