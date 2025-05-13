@@ -113,47 +113,12 @@ async function insert_transfer(tabletype, data) {
             dataList: data.datalist,
             columnMaxLength: columnMaxLength
         }
-       // var query = insertQueryMapping(param);
-        var query = errorQueryMapping(param);
+        var query = insertQueryMapping(param);
         var result = await executeQuery_noclose(query);
         return result;
     } catch (e) {
         logger.error(`DB : insert_transfer :: ${JSON.stringify(e)}`);
     }
-}
-
-function errorQueryMapping(param) {
-
-    var query = `insert into dbo.${param.tableName} (`;
-    var outputQuery = ``;
-
-    for (eachColNameIndex in param.columnList) {
-        query = query + param.columnList[eachColNameIndex];
-        outputQuery = outputQuery + ` inserted.${param.columnList[eachColNameIndex]}`;
-        if ((param.columnList).length > Number(eachColNameIndex) + 1) {
-            query = query + `, `;
-            outputQuery = outputQuery + `, `;
-        }
-    }
-
-    query = query + `) OUTPUT ` + outputQuery + ` VALUES `
-
-    for (var dataObjectindex in param.dataList) {
-        query = query + `( `
-        var singleRow = param.dataList[dataObjectindex];
-        for (var columnIndex in singleRow) {
-            if (singleRow[columnIndex] != "") {
-                query = query + `'` + singleRow[columnIndex] + `'`;
-            } else {
-                query = query + `null`;
-            }
-            if (singleRow.length > (Number(columnIndex) + 1)) { query = query + `,`; }
-        }
-        query = query + `)`
-        if ((param.dataList).length > (Number(dataObjectindex) + 1)) { query = query + `,` }
-    }
-
-    return query;
 }
 
 function insertQueryMapping(param) {
