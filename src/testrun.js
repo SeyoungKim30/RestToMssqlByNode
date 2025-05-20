@@ -113,9 +113,9 @@ async function testing1() {
             dataList: [["11", "12", "13"], ["21", "22", "23"], ["31", "32", "33"]],
         }
 
-       // mybatisMapper.createMapper(['./src/mapper1.xml']);
-      //  var query = mybatisMapper.getStatement('mapper1', 'insert1', param, { language: 'sql' });
-      //  console.log(query)
+        // mybatisMapper.createMapper(['./src/mapper1.xml']);
+        //  var query = mybatisMapper.getStatement('mapper1', 'insert1', param, { language: 'sql' });
+        //  console.log(query)
         executeQuery_noclose(query).then(function (result) {
 
             pool_cloes(true, insert_result);
@@ -162,8 +162,8 @@ async function testing2() {
         var param = {
             tableName: BankMapping[1]["tabletype"],
             outputList: BankMapping[1]["outputColumn"],
-            columnList: ["TRAN_DT", "GROUP_NM", "LIST_NM","werire"],
-            dataList: [["11", "12", "13","14"], ["21", "22", "23","24"], ["31", "32", "33","34"]],
+            columnList: ["TRAN_DT", "GROUP_NM", "LIST_NM", "werire"],
+            dataList: [["11", "12", "13", "14"], ["21", "22", "23", "24"], ["31", "32", "33", "34"]],
             columnMaxLength: columnMaxLength
         }
 
@@ -176,4 +176,27 @@ async function testing2() {
     }
 }
 
-testing2()()
+async function wait3() {
+    var wait2result = await wait2();
+        setTimeout(() => { console.log("3 : end " + wait2result); }, 5000);
+
+}
+
+async function wait2() {
+    var wait1result = await wait1();
+    return new Promise(async function (resolve) {
+        setTimeout(() => { console.log("2 : middle " + wait1result) ;
+            resolve('20000')
+        }, 20000);
+    })
+}
+
+function wait1() {
+    return new Promise(function (resolve) {
+        setTimeout(() => { console.log("1 : start") 
+            resolve('1000')
+        }, 1000);
+    })
+}
+
+wait3();
