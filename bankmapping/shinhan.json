@@ -20,6 +20,7 @@
             "TRAN_JI_NAEYONG",
             "GROUP_NM",
             "LIST_NM",
+            "TRAN_STATUS",
             "NS_RECORDID"
         ],
         "fileNameColumn": "GROUP_NM",

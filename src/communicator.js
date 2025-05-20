@@ -167,8 +167,6 @@ async function run_test() {
     }
 }
 
-
-
 module.exports = {
     run_ptcl,
     run_acct,
