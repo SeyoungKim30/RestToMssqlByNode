@@ -84,7 +84,7 @@ function insert_request(table_type, bearer_token) {
                 }
                 var put_success = await put_request_to_ns('insert_request', data, bearer_token);
                 db_handle.pool_cloes(put_success, insert_result);
-                resolve();
+                resolve(true);
             } else {
                 logger.info(`${table_type} fn insert_request :: NOTHING TO INSERT.`)
             }
@@ -110,7 +110,7 @@ async function update_request(table_type, bearer_token) {
                 logger.info(`${table_type} fn update_request :: NOTHING TO UPDATE :: NS_GET_RESPONSE=${JSON.stringify(get_response.data)} :: SELECT_RESULT= ${JSON.stringify(select_db.result)}`)
             }
         }
-        resolve();
+        resolve(true);
     })
 }
 
@@ -139,10 +139,11 @@ async function import_transaction(bearer_token) {
 
 async function run_ptcl() {       //이체 요청
     try {
-        logger.info('run_ptcl : ' + new Date())
+        logger.warn('run_ptcl : ' + new Date())
         var bearer_token = await oauth.get_access_token();
         await update_request("1", bearer_token);
         await insert_request("1", bearer_token);
+        logger.warn('run_ptcl end: ' + new Date())
     } catch (e) {
         logger.error('run_ptcl : ' + e)
     }
@@ -150,9 +151,10 @@ async function run_ptcl() {       //이체 요청
 
 async function run_acct() {        //match bank를 위한 계좌내역 가져오기
     try {
-  logger.info('run_acct : ' + new Date())
+        logger.warn('run_acct : ' + new Date())
         var bearer_token = await oauth.get_access_token();
         import_transaction(bearer_token);
+        logger.warn('run_acct end : ' + new Date())
     } catch (e) {
         logger.error(e)
     }
