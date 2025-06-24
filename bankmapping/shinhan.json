@@ -2,7 +2,8 @@
     "tabletype": {
         "1": "IB_BULK_TRAN",
         "4": "IB_BULK_TRAN_PAY",
-        "5": "IB_ACCT_TR_DD"
+        "5": "IB_ACCT_TR_DD",
+        "6":"IB_ACCT_TR_FCD"
     },
     "1": {
         "tabletype": "IB_BULK_TRAN",

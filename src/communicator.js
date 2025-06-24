@@ -62,7 +62,7 @@ async function put_request_to_ns(fn_name, put_data, bearer_token) {
 }
 
 function insert_request(table_type, bearer_token) {
-    return new Promise(async function (resolve) {
+    return new Promise(async function (resolve, reject) {
         var response = await axios_get(table_type, "insert", bearer_token);
         if (response.status == 200) {
             logger.info(`fn insert_request : axios_get :: response success` + table_type)
@@ -84,12 +84,13 @@ function insert_request(table_type, bearer_token) {
                 }
                 var put_success = await put_request_to_ns('insert_request', data, bearer_token);
                 db_handle.pool_cloes(put_success, insert_result);
-                resolve(true);
             } else {
                 logger.info(`${table_type} fn insert_request :: NOTHING TO INSERT.`)
             }
+            resolve(true);
         } else {
             logger.error(`fn insert_request : axios_get :: response fail` + JSON.stringify(response));
+            reject(false)
         }
     })
 }
@@ -115,8 +116,8 @@ async function update_request(table_type, bearer_token) {
 }
 
 
-async function import_transaction(bearer_token) {
-    const db_result = await db_handle.select_importingTransaction();
+async function import_transaction(tabletype, bearer_token) {
+    const db_result = await db_handle.select_importingTransaction(tabletype);
     if (db_result.result) {
         const post_config = {
             method: 'post',
@@ -126,7 +127,7 @@ async function import_transaction(bearer_token) {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + bearer_token
             },
-            data: JSON.stringify({ type: "success", recordset: db_result.result.recordset })
+            data: JSON.stringify({ type: "success", tabletype: tabletype, recordset: db_result.result.recordset })
         };
         const post_result = await axios.request(post_config)
         if (post_result.data.type == "success") {
@@ -153,7 +154,8 @@ async function run_acct() {        //match bank를 위한 계좌내역 가져오
     try {
         logger.warn('run_acct : ' + new Date())
         var bearer_token = await oauth.get_access_token();
-        import_transaction(bearer_token);
+        import_transaction("5", bearer_token);
+        import_transaction("6", bearer_token);
         logger.warn('run_acct end : ' + new Date())
     } catch (e) {
         logger.error(e)

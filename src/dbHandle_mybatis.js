@@ -74,15 +74,16 @@ async function pool_cloes(put_result, insert_result) {
         }
     } finally {
         pool.close();
+        logger.warn("pool closed")
     }
 }
 
-async function select_importingTransaction() {
+async function select_importingTransaction(tabletype) {
     try {
         mybatisMapper.createMapper(['./src/mapper1.xml']);
 
         // SQL Parameters
-        var param = { table_importtrsc: BankMapping["5"]["tabletype"] }
+        var param = { table_importtrsc: BankMapping["tabletype"][tabletype] }
         // Get SQL Statement
         var format = { language: 'sql' };
         var query = mybatisMapper.getStatement('mapper1', 'select_importtrsc', param, format);
