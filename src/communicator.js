@@ -117,25 +117,30 @@ async function update_request(table_type, bearer_token) {
 
 
 async function import_transaction(tabletype, bearer_token) {
-    const db_result = await db_handle.select_importingTransaction(tabletype);
-    if (db_result.result) {
-        const post_config = {
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: server_config.SWK_RL_CMS_importTrsc,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + bearer_token
-            },
-            data: JSON.stringify({ type: "success", tabletype: tabletype, recordset: db_result.result.recordset })
-        };
-        const post_result = await axios.request(post_config)
-        if (post_result.data.type == "success") {
-            logger.info(`import_transaction : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result.recordset)}`)
-        } else {
-            logger.error(`import_transaction : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result)}`)
-        }
-    }
+    return new Promise(async function (resolve, reject) {
+        try {
+            const db_result = await db_handle.select_importingTransaction(tabletype);
+            if (db_result.result) {
+                const post_config = {
+                    method: 'post',
+                    maxBodyLength: Infinity,
+                    url: server_config.SWK_RL_CMS_importTrsc,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + bearer_token
+                    },
+                    data: JSON.stringify({ type: "success", tabletype: tabletype, recordset: db_result.result.recordset })
+                };
+                const post_result = await axios.request(post_config);
+                if (post_result.data.type == "success") {
+                    logger.info(`import_transaction : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result.recordset)}`)
+                } else {
+                    logger.error(`import_transaction : post_result :: ${JSON.stringify(post_result.data)} :: ${JSON.stringify(db_result.result)}`)
+                }
+            }
+	resolve(true);
+        } catch (e) { logger.error(`import_transaction ` + String(e)); }
+    })
 }
 
 async function run_ptcl() {       //이체 요청
@@ -154,8 +159,9 @@ async function run_acct() {        //match bank를 위한 계좌내역 가져오
     try {
         logger.warn('run_acct : ' + new Date())
         var bearer_token = await oauth.get_access_token();
-        import_transaction("5", bearer_token);
-        import_transaction("6", bearer_token);
+        await import_transaction("5", bearer_token);
+        await import_transaction("6", bearer_token);
+        await import_transaction("7", bearer_token);
         logger.warn('run_acct end : ' + new Date())
     } catch (e) {
         logger.error(e)
@@ -165,7 +171,7 @@ async function run_acct() {        //match bank를 위한 계좌내역 가져오
 async function run_test() {
     try {
         const bearer_token = await oauth.get_access_token();
-        insert_request("1", bearer_token)
+       await import_transaction("7", bearer_token);
     } catch (e) {
         logger.error(e)
     }

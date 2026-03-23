@@ -84,9 +84,11 @@ async function select_importingTransaction(tabletype) {
 
         // SQL Parameters
         var param = { table_importtrsc: BankMapping["tabletype"][tabletype] }
+       
         // Get SQL Statement
         var format = { language: 'sql' };
         var query = mybatisMapper.getStatement('mapper1', 'select_importtrsc', param, format);
+
         var result = await executeQuery(query);
         return result;
     } catch (e) {
