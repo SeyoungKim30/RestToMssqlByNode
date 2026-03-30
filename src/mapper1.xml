@@ -5,11 +5,19 @@
 
 
 
-  <select id="select_importtrsc">
-   WITH Top500Records AS ( SELECT TOP 500 * FROM ${table_importtrsc} WHERE NS_INTFC IS NULL )
-		UPDATE Top500Records SET NS_INTFC = GETDATE()
-		OUTPUT inserted.* ;
-  </select>
+	  <select id="select_importtrsc">
+	   WITH Top500Records AS (
+	     SELECT TOP 500 *
+	     FROM ${table_importtrsc}
+	     WHERE NS_STATUS IS NULL
+	        OR NS_STATUS = '${statusFailed}'
+	        OR (NS_STATUS = '${statusSending}' AND NS_INTFC &lt; DATEADD(MINUTE, -${retryMinutes}, GETDATE()))
+	   )
+			UPDATE Top500Records
+			SET NS_STATUS = '${statusSending}',
+			    NS_INTFC = GETDATE()
+			OUTPUT inserted.* ;
+	  </select>
 
 
 

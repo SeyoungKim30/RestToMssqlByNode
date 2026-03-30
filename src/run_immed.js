@@ -1,4 +1,13 @@
 const cmnct = require("./communicator.js")
-cmnct.run_ptcl();
-cmnct.run_acct();
-//cmnct.run_test();
+const db_handle = require("./dbHandle_mybatis.js")
+
+async function main() {
+    try {
+        await cmnct.run_ptcl();
+        await cmnct.run_acct();
+    } finally {
+        await db_handle.closePool();
+    }
+}
+
+main();

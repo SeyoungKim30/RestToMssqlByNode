@@ -7,12 +7,15 @@ const logger = require("./logger.js");
 const server_config = require('../config.json');
 require('dotenv').config();
 
+const REQUEST_TIMEOUT_MS = 60000;
+
 
 async function get_access_token() {
     try {
         let jsrsasign_config = {
             method: 'get',
             maxBodyLength: Infinity,
+            timeout: REQUEST_TIMEOUT_MS,
             url: 'https://kjur.github.io/jsrsasign/jsrsasign-latest-all-min.js',
             headers: {}
         };
@@ -62,6 +65,7 @@ async function get_access_token() {
         let config = {
             method: 'post',
             maxBodyLength: Infinity,
+            timeout: REQUEST_TIMEOUT_MS,
             url: server_config.oauth2_url,
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -73,6 +77,7 @@ async function get_access_token() {
         return response.data.access_token
     } catch (e) {
         logger.error("fn get_access_token :: " + e)
+        return null;
     }
 }
 
